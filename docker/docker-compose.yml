@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MAIN APPLICATION
   song-scanner-bot:
@@ -87,7 +85,7 @@ services:
       - LOG_LEVEL=info
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution@postgres:5432/evolution
+      - DATABASE_CONNECTION_URI=postgresql://${EVOLUTION_DB_USER:-evolution}:${EVOLUTION_DB_PASSWORD:-changeme}@postgres:5432/evolution
       - REDIS_ENABLED=true
       - REDIS_URI=redis://redis:6379
     volumes:

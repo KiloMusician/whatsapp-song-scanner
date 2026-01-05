@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Song Scanner - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #25D366;
+            --primary-dark: #1BA352;
+            --danger: #FF4444;
+            --warning: #FFA500;
+            --success: #4CAF50;
+            --bg: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --text: #ffffff;
+            --text-secondary: #cccccc;
+            --border: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .status-badge.healthy {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .status-badge.degraded {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .status-badge.unhealthy {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .dot.healthy {
+            background: var(--success);
+        }
+
+        .dot.degraded {
+            background: var(--warning);
+        }
+
+        .dot.unhealthy {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .requests-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .requests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .requests-header h2 {
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        .request-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            padding: 15px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .request-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .request-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .request-title {
+            font-weight: bold;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .request-artist {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .request-meta {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .request-meta span {
+            margin-right: 15px;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .request-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .request-actions {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 WhatsApp Song Scanner</h1>
+            <div id="statusBadge" class="status-badge">
+                <div class="dot"></div>
+                <span>Loading...</span>
+            </div>
+        </header>
+
+        <div id="errorMsg" class="error"></div>
+        <div id="successMsg" class="success"></div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>Pending Requests</h3>
+                <div class="stat-value" id="pendingCount">0</div>
+                <div class="stat-label">Awaiting approval</div>
+            </div>
+            <div class="card">
+                <h3>Approved Today</h3>
+                <div class="stat-value" id="approvedCount">0</div>
+                <div class="stat-label">Songs queued to RadioDJ</div>
+            </div>
+            <div class="card">
+                <h3>Total Chats</h3>
+                <div class="stat-value" id="chatsCount">0</div>
+                <div class="stat-label">Being monitored</div>
+            </div>
+            <div class="card">
+                <h3>Last Scan</h3>
+                <div class="stat-value" id="lastScan" style="font-size: 16px;">--:--</div>
+                <div class="stat-label">Minutes ago</div>
+            </div>
+        </div>
+
+        <div class="requests-container">
+            <div class="requests-header">
+                <h2>Song Requests</h2>
+                <button class="btn btn-primary" onclick="refreshRequests()">🔄 Refresh</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('pending')">Pending (Approval)</button>
+                <button class="tab" onclick="switchTab('approved')">Approved (Queued)</button>
+            </div>
+
+            <div id="pendingTab" class="tab-content active">
+                <div id="pendingRequests" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading pending requests...</p>
+                </div>
+            </div>
+
+            <div id="approvedTab" class="tab-content">
+                <div id="approvedRequests" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading approved requests...</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            WhatsApp Song Scanner v1.0.0 | API Status: <span id="apiStatus">Checking...</span>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let currentPage = 'pending';
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                showError(`Failed to fetch ${endpoint}`);
+                return null;
+            }
+        }
+
+        async function postData(endpoint, data) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error posting to ${endpoint}:`, error);
+                showError(`Failed to update request`);
+                return null;
+            }
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = msg;
+            errorEl.classList.add('show');
+            setTimeout(() => errorEl.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(msg) {
+            const successEl = document.getElementById('successMsg');
+            successEl.textContent = msg;
+            successEl.classList.add('show');
+            setTimeout(() => successEl.classList.remove('show'), 5000);
+        }
+
+        function switchTab(tab) {
+            currentPage = tab;
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            if (tab === 'pending') {
+                refreshPendingRequests();
+            } else {
+                refreshApprovedRequests();
+            }
+        }
+
+        async function refreshRequests() {
+            if (currentPage === 'pending') {
+                refreshPendingRequests();
+            } else {
+                refreshApprovedRequests();
+            }
+        }
+
+        async function refreshPendingRequests() {
+            const container = document.getElementById('pendingRequests');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            
+            const data = await fetchData('/requests/pending?limit=50');
+            if (!data) return;
+
+            if (!data.requests || data.requests.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✨</div><p>All caught up! No pending requests.</p></div>';
+                document.getElementById('pendingCount').textContent = '0';
+                return;
+            }
+
+            document.getElementById('pendingCount').textContent = data.requests.length;
+            container.innerHTML = data.requests.map(req => `
+                <div class="request-item">
+                    <div class="request-info">
+                        <div class="request-title">${escapeHtml(req.song_title || 'Unknown')}</div>
+                        <div class="request-artist">${escapeHtml(req.artist_name || 'Unknown Artist')}</div>
+                        <div class="request-meta">
+                            <span>Chat: ${escapeHtml(req.chat_id || 'Unknown')}</span>
+                            <span>Confidence: ${(req.match_confidence * 100).toFixed(0)}%</span>
+                            <span>Requested by: ${escapeHtml(req.requested_by || 'Unknown')}</span>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn btn-success btn-small" onclick="approveRequest(${req.id})">✓ Approve</button>
+                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${req.id})">✗ Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function refreshApprovedRequests() {
+            const container = document.getElementById('approvedRequests');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            
+            const data = await fetchData('/requests/pending?limit=50');
+            if (!data) return;
+
+            const approved = data.requests?.filter(r => r.status === 'approved' || r.status === 'queued') || [];
+            
+            if (approved.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎵</div><p>No approved requests yet.</p></div>';
+                document.getElementById('approvedCount').textContent = '0';
+                return;
+            }
+
+            document.getElementById('approvedCount').textContent = approved.length;
+            container.innerHTML = approved.map(req => `
+                <div class="request-item">
+                    <div class="request-info">
+                        <div class="request-title">${escapeHtml(req.song_title || 'Unknown')}</div>
+                        <div class="request-artist">${escapeHtml(req.artist_name || 'Unknown Artist')}</div>
+                        <div class="request-meta">
+                            <span>Status: ${req.status.toUpperCase()}</span>
+                            <span>Approved at: ${new Date(req.updated_at).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveRequest(id) {
+            if (!confirm('Approve this song request?')) return;
+            const result = await postData('/requests/approve', { id });
+            if (result) {
+                showSuccess('Request approved and queued to RadioDJ!');
+                setTimeout(refreshRequests, 500);
+            }
+        }
+
+        async function rejectRequest(id) {
+            const notes = prompt('Reject request. Add reason (optional):');
+            if (notes === null) return;
+            const result = await postData('/requests/reject', { id, notes });
+            if (result) {
+                showSuccess('Request rejected');
+                setTimeout(refreshRequests, 500);
+            }
+        }
+
+        async function updateStatus() {
+            const health = await fetchData('/health');
+            const metrics = await fetchData('/metrics');
+            const scanStatus = await fetchData('/scan/status');
+
+            if (health) {
+                const statusBadge = document.getElementById('statusBadge');
+                const statusClass = health.status.toLowerCase();
+                statusBadge.className = `status-badge ${statusClass}`;
+                const dot = statusBadge.querySelector('.dot');
+                dot.className = `dot ${statusClass}`;
+                statusBadge.querySelector('span').textContent = health.status.charAt(0).toUpperCase() + health.status.slice(1);
+                document.getElementById('apiStatus').textContent = statusClass === 'healthy' ? '✓ Online' : '⚠ Degraded';
+            }
+
+            if (metrics) {
+                document.getElementById('chatsCount').textContent = metrics.chats_monitored || '0';
+            }
+
+            if (scanStatus) {
+                const lastScan = new Date(scanStatus.last_scan);
+                const minutesAgo = Math.floor((Date.now() - lastScan) / 60000);
+                document.getElementById('lastScan').textContent = `${minutesAgo}m ago`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus();
+            refreshPendingRequests();
+            setInterval(updateStatus, 30000);
+            setInterval(refreshPendingRequests, 60000);
+        });
+    </script>
+</body>
+</html>
