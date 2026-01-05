@@ -1,0 +1,212 @@
+"""Handle incoming WhatsApp messages."""
+from datetime import datetime
+from typing import Dict
+from sqlalchemy.orm import Session
+from src.whatsapp.client import whatsapp_client
+from src.database.operations import ChatOperations, MessageOperations
+from src.text_processing.text_cleaner import text_cleaner
+from src.text_processing.message_parser import message_parser
+from src.music_matching.matching_orchestrator import matching_orchestrator
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+class MessageHandler:
+    """Handle incoming WhatsApp messages."""
+    
+    def __init__(self):
+        """Initialize message handler."""
+        self.client = whatsapp_client
+        self.cleaner = text_cleaner
+        self.parser = message_parser
+        self.orchestrator = matching_orchestrator
+    
+    def handle_twilio_webhook(self, db: Session, webhook_data: Dict) -> bool:
+        """Handle incoming Twilio webhook.
+        
+        Args:
+            db: Database session
+            webhook_data: Webhook payload from Twilio
+            
+        Returns:
+            True if handled successfully
+        """
+        try:
+            # Extract message data
+            message_sid = webhook_data.get('MessageSid')
+            from_number = webhook_data.get('From', '').replace('whatsapp:', '')
+            to_number = webhook_data.get('To', '').replace('whatsapp:', '')
+            body = webhook_data.get('Body', '')
+            timestamp_str = webhook_data.get('timestamp')
+            
+            # Parse timestamp
+            timestamp = datetime.utcnow()
+            if timestamp_str:
+                try:
+                    timestamp = datetime.fromisoformat(timestamp_str)
+                except:
+                    pass
+            
+            # Use from_number as chat_id for Twilio
+            chat_id = from_number
+            
+            # Process the message
+            return self.process_message(
+                db=db,
+                message_id=message_sid,
+                chat_id=chat_id,
+                sender_number=from_number,
+                sender_name=from_number,
+                raw_text=body,
+                timestamp=timestamp
+            )
+        except Exception as e:
+            logger.error(f"Error handling Twilio webhook: {e}")
+            return False
+    
+    def handle_evolution_message(self, db: Session, message_data: Dict) -> bool:
+        """Handle message from Evolution API.
+        
+        Args:
+            db: Database session
+            message_data: Message data from Evolution API
+            
+        Returns:
+            True if handled successfully
+        """
+        try:
+            # Extract message data from Evolution API format
+            key = message_data.get('key', {})
+            message = message_data.get('message', {})
+            
+            message_id = key.get('id')
+            chat_id = key.get('remoteJid')
+            sender_number = key.get('participant') or key.get('fromMe')
+            
+            # Extract text from various message types
+            raw_text = ''
+            if 'conversation' in message:
+                raw_text = message['conversation']
+            elif 'extendedTextMessage' in message:
+                raw_text = message['extendedTextMessage'].get('text', '')
+            
+            # Get timestamp
+            timestamp = datetime.fromtimestamp(message_data.get('messageTimestamp', 0))
+            
+            # Get sender name (if available)
+            push_name = message_data.get('pushName', sender_number)
+            
+            # Process the message
+            return self.process_message(
+                db=db,
+                message_id=message_id,
+                chat_id=chat_id,
+                sender_number=sender_number,
+                sender_name=push_name,
+                raw_text=raw_text,
+                timestamp=timestamp
+            )
+        except Exception as e:
+            logger.error(f"Error handling Evolution message: {e}")
+            return False
+    
+    def process_message(
+        self,
+        db: Session,
+        message_id: str,
+        chat_id: str,
+        sender_number: str,
+        sender_name: str,
+        raw_text: str,
+        timestamp: datetime
+    ) -> bool:
+        """Process a message through the complete pipeline.
+        
+        Args:
+            db: Database session
+            message_id: Unique message identifier
+            chat_id: Chat identifier
+            sender_number: Sender phone number
+            sender_name: Sender display name
+            raw_text: Raw message text
+            timestamp: Message timestamp
+            
+        Returns:
+            True if processed successfully
+        """
+        try:
+            logger.info(f"Processing message: {message_id} from {sender_name}")
+            
+            # STEP 1: Ensure chat exists
+            ChatOperations.create_or_update_chat(db, chat_id, chat_id)
+            
+            # STEP 2: Store message
+            message = MessageOperations.create_message(
+                db=db,
+                message_id=message_id,
+                chat_id=chat_id,
+                sender_number=sender_number,
+                sender_name=sender_name,
+                raw_text=raw_text,
+                timestamp=timestamp
+            )
+            
+            # STEP 3: Clean text
+            cleaned_text = self.cleaner.clean(raw_text)
+            if not cleaned_text:
+                logger.debug(f"Message {message_id} has no useful content")
+                MessageOperations.mark_processed(db, message.id, cleaned_text)
+                return True
+            
+            # STEP 4: Parse for song requests
+            candidates = self.parser.parse(cleaned_text)
+            if not candidates:
+                logger.debug(f"No song candidates found in message {message_id}")
+                MessageOperations.mark_processed(db, message.id, cleaned_text)
+                return True
+            
+            logger.info(f"Found {len(candidates)} song candidates in message")
+            
+            # STEP 5: Process each candidate
+            from src.database.operations import SongOperations
+            
+            for candidate in candidates:
+                try:
+                    # Create extraction record
+                    extraction = SongOperations.create_extraction(
+                        db=db,
+                        message_id=message.id,
+                        original_phrase=candidate['original_phrase'],
+                        confidence_score=candidate['confidence'],
+                        extraction_method=candidate['extraction_method']
+                    )
+                    
+                    # Attempt to match and create request
+                    self.orchestrator.process_extraction(
+                        db=db,
+                        extraction_id=extraction.id,
+                        title=candidate['title'],
+                        artist=candidate.get('artist'),
+                        chat_id=chat_id,
+                        requested_by=sender_name
+                    )
+                except Exception as e:
+                    logger.error(f"Error processing candidate: {e}")
+                    continue
+            
+            # STEP 6: Mark message as processed
+            MessageOperations.mark_processed(db, message.id, cleaned_text)
+            
+            logger.info(f"Successfully processed message {message_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+            try:
+                MessageOperations.record_processing_error(db, message.id, str(e))
+            except:
+                pass
+            return False
+
+# SINGLETON INSTANCE
+message_handler = MessageHandler()
