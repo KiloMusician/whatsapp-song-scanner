@@ -1,0 +1,37 @@
+# CORE DEPENDENCIES
+python-dotenv>=1.0.0
+python-multipart>=0.0.6
+
+# WHATSAPP INTEGRATION
+twilio>=8.0.0
+requests>=2.28.0
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+
+# DATABASE
+SQLAlchemy>=2.0.0
+pymysql>=1.0.0
+alembic>=1.11.0
+python-dateutil>=2.8.0
+
+# MUSIC MATCHING
+musicbrainzngs>=0.7.1
+thefuzz>=0.19.0
+python-Levenshtein>=0.21.0
+spotipy>=2.22.0
+deezer-python>=5.5.0
+
+# TEXT PROCESSING
+nltk>=3.8.0
+regex>=2023.6.0
+
+# UTILITIES
+redis>=4.5.0
+celery>=5.3.0
+APScheduler>=3.10.0
+pytz>=2023.3
+tzlocal>=5.0.1
+click>=8.1.0
+
+# MONITORING
+prometheus-client>=0.17.0
