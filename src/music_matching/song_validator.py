@@ -1,6 +1,7 @@
 """Song match validation logic."""
 
 from typing import Dict, Tuple
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -44,7 +45,7 @@ class SongValidator:
         # Check if we have artist info
         has_artist = bool(match.get("artist_credits"))
         if not has_artist:
-            logger.warning("Match has no artist info: %s", match['title'])
+            logger.warning("Match has no artist info: %s", match["title"])
 
         # Check if we have MusicBrainz ID
         if not match.get("musicbrainz_id"):
@@ -78,7 +79,7 @@ class SongValidator:
         if confidence < AUTO_APPROVE_THRESHOLD:
             return False
 
-        logger.info("Auto-approving: %s (confidence=%.2f)", match['title'], confidence)
+        logger.info("Auto-approving: %s (confidence=%.2f)", match["title"], confidence)
         return True
 
 

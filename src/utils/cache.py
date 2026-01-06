@@ -1,7 +1,9 @@
 """Caching mechanisms using Redis."""
 
-import redis
 from typing import Optional, cast
+
+import redis
+
 from config.settings import REDIS_CONFIG
 from src.utils.logger import get_logger
 

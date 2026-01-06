@@ -1,7 +1,9 @@
 """Fuzzy string matching for song titles and artists."""
 
+from typing import Any, Dict, List, Optional, Tuple, cast
+
 from thefuzz import fuzz
-from typing import List, Dict, Tuple, Optional, Any, cast
+
 from config.settings import MUSIC_MATCHING_CONFIG
 from src.utils.logger import get_logger
 

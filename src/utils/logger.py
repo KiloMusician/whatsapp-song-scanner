@@ -1,6 +1,6 @@
 """Unified logging utilities."""
 
-from config.logging_config import setup_logging, app_logger
+from config.logging_config import app_logger, setup_logging
 
 __all__ = ["setup_logging", "app_logger", "get_logger"]
 

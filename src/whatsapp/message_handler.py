@@ -2,13 +2,15 @@
 
 from datetime import datetime, timezone
 from typing import Dict
+
 from sqlalchemy.orm import Session
-from src.whatsapp.client import whatsapp_client
+
 from src.database.operations import ChatOperations, MessageOperations
-from src.text_processing.text_cleaner import text_cleaner
-from src.text_processing.message_parser import message_parser
 from src.music_matching.matching_orchestrator import matching_orchestrator
+from src.text_processing.message_parser import message_parser
+from src.text_processing.text_cleaner import text_cleaner
 from src.utils.logger import get_logger
+from src.whatsapp.client import whatsapp_client
 
 logger = get_logger(__name__)
 

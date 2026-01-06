@@ -30,7 +30,7 @@ class StateManager:
     def set_status(self, status: str):
         """Set application status."""
         self.state["status"] = status
-        logger.info(f"Application status: {status}")
+        logger.info("Application status: %s", status)
 
     def update_last_scan(self):
         """Update last scan timestamp."""

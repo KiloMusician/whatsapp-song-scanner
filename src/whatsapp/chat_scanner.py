@@ -1,11 +1,13 @@
 """Scan and process WhatsApp chat history."""
 
 from typing import Dict
+
 from sqlalchemy.orm import Session
-from src.whatsapp.client import whatsapp_client
-from src.whatsapp.message_handler import message_handler
+
 from src.database.operations import ChatOperations
 from src.utils.logger import get_logger
+from src.whatsapp.client import whatsapp_client
+from src.whatsapp.message_handler import message_handler
 
 logger = get_logger(__name__)
 
@@ -54,9 +56,7 @@ class ChatScanner:
         # Update last scan time
         ChatOperations.update_last_scan(db, chat_id)
 
-        logger.info(
-            "Processed %s/%s messages from chat %s", processed, len(messages), chat_id
-        )
+        logger.info("Processed %s/%s messages from chat %s", processed, len(messages), chat_id)
         return processed
 
     def scan_all_active_chats(self, db: Session) -> Dict[str, int]:

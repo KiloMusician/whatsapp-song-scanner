@@ -1,14 +1,14 @@
 """Command-line interface for WhatsApp Song Scanner."""
 
 import click
-from datetime import datetime
+
 from config.database import SessionLocal
-from config.settings import WHATSAPP_CONFIG
-from src.whatsapp.chat_scanner import chat_scanner
-from src.radiodj_integration.sync_service import sync_service
-from src.database.operations import ChatOperations, RequestOperations
 from src.core.state_manager import state_manager
+from src.database.models import SongRequest
+from src.database.operations import ChatOperations, RequestOperations
+from src.radiodj_integration.sync_service import sync_service
 from src.utils.logger import get_logger
+from src.whatsapp.chat_scanner import chat_scanner
 
 logger = get_logger(__name__)
 
@@ -28,7 +28,7 @@ def cli():
 )
 def scan(chat_id):
     """Scan WhatsApp chats for song requests.
-    
+
     Examples:
         python -m src.cli scan                    # Scan all active chats
         python -m src.cli scan --chat-id=<id>    # Scan specific chat
@@ -63,7 +63,7 @@ def scan(chat_id):
 )
 def sync(limit):
     """Sync approved song requests to RadioDJ.
-    
+
     Examples:
         python -m src.cli sync              # Sync up to 50 requests
         python -m src.cli sync --limit=10   # Sync up to 10 requests
@@ -72,7 +72,7 @@ def sync(limit):
     try:
         click.echo(f"Syncing approved requests (limit: {limit})...")
         stats = sync_service.sync_approved_requests(db, limit)
-        click.echo(f"✓ Sync completed:")
+        click.echo("✓ Sync completed:")
         click.echo(f"  - Synced: {stats['synced']}")
         click.echo(f"  - Failed: {stats['failed']}")
         state_manager.update_last_sync()
@@ -86,13 +86,13 @@ def sync(limit):
 @cli.command()
 def status():
     """Show current application status.
-    
+
     Examples:
         python -m src.cli status
     """
     state = state_manager.get_state()
     uptime = state_manager.get_uptime_seconds()
-    
+
     click.echo("\n" + "=" * 50)
     click.echo("WhatsApp Song Scanner Status")
     click.echo("=" * 50)
@@ -111,7 +111,7 @@ def status():
 @cli.command()
 def list_chats():
     """List all active WhatsApp chats.
-    
+
     Examples:
         python -m src.cli list-chats
     """
@@ -121,7 +121,7 @@ def list_chats():
         if not chats:
             click.echo("No active chats found.")
             return
-        
+
         click.echo(f"\nActive chats ({len(chats)}):")
         click.echo("-" * 60)
         for chat in chats:
@@ -140,7 +140,7 @@ def list_chats():
 @click.option("--limit", default=10, type=int, help="Maximum requests to display")
 def list_requests(limit):
     """List pending song requests.
-    
+
     Examples:
         python -m src.cli list-requests              # Show 10 pending requests
         python -m src.cli list-requests --limit=20   # Show 20 pending requests
@@ -151,7 +151,7 @@ def list_requests(limit):
         if not requests:
             click.echo("No pending requests found.")
             return
-        
+
         click.echo(f"\nPending requests ({len(requests)}):")
         click.echo("-" * 80)
         for req in requests:
@@ -175,17 +175,17 @@ def list_requests(limit):
 @click.argument("request_id", type=int)
 def approve(request_id):
     """Approve a song request.
-    
+
     Examples:
         python -m src.cli approve 5
     """
     db = SessionLocal()
     try:
-        request = db.query(RequestOperations.__class__).get(request_id)
+        request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if not request:
             click.echo(f"✗ Request {request_id} not found.", err=True)
             return
-        
+
         RequestOperations.approve_request(db, request_id)
         click.echo(f"✓ Request {request_id} approved.")
     except Exception as e:
@@ -200,7 +200,7 @@ def approve(request_id):
 @click.option("--notes", default="", help="Rejection notes")
 def reject(request_id, notes):
     """Reject a song request.
-    
+
     Examples:
         python -m src.cli reject 5
         python -m src.cli reject 5 --notes="Not available"

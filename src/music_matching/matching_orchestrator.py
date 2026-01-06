@@ -80,11 +80,9 @@ class MatchingOrchestrator:
         # STEP 5: Check if should auto-approve
         if self.validator.should_auto_approve(best_match, confidence):
             SongOperations.verify_match(db, cast(int, matched_song.id), "auto_approve")
-            logger.info("Match auto-approved: %s", best_match['title'])
+            logger.info("Match auto-approved: %s", best_match["title"])
 
-        logger.info(
-            "Successfully matched: %s (confidence=%.2f)", best_match['title'], confidence
-        )
+        logger.info("Successfully matched: %s (confidence=%.2f)", best_match["title"], confidence)
 
         return {
             "matched_song_id": matched_song.id,
@@ -137,7 +135,7 @@ class MatchingOrchestrator:
         if match_result["is_verified"]:
             RequestOperations.approve_request(db, request_id_int)
 
-        logger.info("Created request %s for: %s", request_id_int, match_result['title'])
+        logger.info("Created request %s for: %s", request_id_int, match_result["title"])
 
         return request_id_int
 

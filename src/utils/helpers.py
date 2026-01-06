@@ -1,8 +1,8 @@
 """General helper functions."""
 
 import re
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 
 def clean_text(text: str) -> str:

@@ -25,9 +25,7 @@ class RadioDJClient:
 
         logger.info("RadioDJ client initialized")
 
-    def add_track_via_api(
-        self, artist: str, title: str, playlist_id: Optional[int] = None
-    ) -> bool:
+    def add_track_via_api(self, artist: str, title: str, playlist_id: Optional[int] = None) -> bool:
         """Add track to RadioDJ queue via API.
 
         Args:

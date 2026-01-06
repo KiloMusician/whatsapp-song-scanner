@@ -19,7 +19,9 @@ class ChatOperations:
     """Operations for WhatsApp chats."""
 
     @staticmethod
-    def create_or_update_chat(db: Session, chat_id: str, chat_name: Optional[str] = None) -> WhatsAppChat:
+    def create_or_update_chat(
+        db: Session, chat_id: str, chat_name: Optional[str] = None
+    ) -> WhatsAppChat:
         """Create or update a WhatsApp chat."""
         chat = db.query(WhatsAppChat).filter(WhatsAppChat.chat_id == chat_id).first()
         if chat:

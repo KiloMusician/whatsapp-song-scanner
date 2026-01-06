@@ -5,7 +5,7 @@ A production-ready system that scans WhatsApp chats for song requests, matches t
 ## ✨ Features
 
 - **WhatsApp Integration**: Supports both Twilio WhatsApp API and Evolution API
-- **Intelligent Song Matching**: Uses MusicBrainz with fuzzy matching and confidence scoring bn nm
+- **Intelligent Song Matching**: Uses MusicBrainz with fuzzy matching and confidence scoring
 - **Database Storage**: Complete MariaDB schema for tracking chats, messages, songs, and requests
 - **RadioDJ Integration**: Automated playlist addition via API or direct database access
 - **Modular Architecture**: Clean separation of concerns for easy maintenance

@@ -39,9 +39,7 @@ class WhatsAppChat(Base):
     )
 
     # RELATIONSHIPS
-    messages = relationship(
-        "ChatMessage", back_populates="chat", cascade=CASCADE_DELETE_ORPHAN
-    )
+    messages = relationship("ChatMessage", back_populates="chat", cascade=CASCADE_DELETE_ORPHAN)
     song_requests = relationship(
         "SongRequest", back_populates="chat", cascade=CASCADE_DELETE_ORPHAN
     )
@@ -143,9 +141,7 @@ class SongRequest(Base):
     actual_play_time = Column(DateTime)
     play_count = Column(Integer, default=0)
     notes = Column(Text)
-    created_at = Column(
-        DateTime, default=lambda: datetime.now(timezone.utc), index=True
-    )
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
