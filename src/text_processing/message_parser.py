@@ -18,7 +18,7 @@ class MessageParser:
             # "play Song by Artist"
             (
                 re.compile(
-                    r'play\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+' r'(?P<artist>[^"\'.]+)',
+                    r'play\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+(?P<artist>[^\'\".]+)',
                     re.IGNORECASE,
                 ),
                 "play_by",

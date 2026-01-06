@@ -27,7 +27,7 @@ def run_command(cmd, description):
             print("STDERR:", result.stderr, file=sys.stderr)
 
         return result.returncode == 0
-    except Exception as e:  # noqa: BLE001
+    except (subprocess.SubprocessError, OSError, ValueError) as e:
         print(f"❌ Error running command: {e}")
         return False
 

@@ -90,7 +90,7 @@ class MusicBrainzClient:
         except musicbrainzngs.ResponseError as exc:
             logger.error("MusicBrainz response error: %s", exc)
             return []
-        except Exception as exc:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError) as exc:
             logger.error("Unexpected error in search_song: %s", exc)
             return []
 
@@ -108,6 +108,50 @@ class MusicBrainzClient:
                 time.sleep(wait_time)
         return {}
 
+    def _extract_artist_info(self, recording: Dict) -> List[Dict]:
+        """Extract artist information from a recording.
+
+        Args:
+            recording: Recording data from MusicBrainz
+
+        Returns:
+            List of artist information dictionaries
+        """
+        artists = []
+        if "artist-credit" in recording:
+            for credit in recording["artist-credit"]:
+                if isinstance(credit, dict) and "artist" in credit:
+                    artist = credit["artist"]
+                    artists.append(
+                        {
+                            "id": artist.get("id", ""),
+                            "name": artist.get("name", ""),
+                            "sort_name": artist.get("sort-name", ""),
+                        }
+                    )
+        return artists
+
+    def _extract_release_info(self, recording: Dict) -> List[Dict]:
+        """Extract release information from a recording.
+
+        Args:
+            recording: Recording data from MusicBrainz
+
+        Returns:
+            List of release information dictionaries (limited to 3)
+        """
+        releases = []
+        if "release-list" in recording:
+            for release in recording["release-list"][:3]:  # Limit to 3 releases
+                releases.append(
+                    {
+                        "id": release.get("id", ""),
+                        "title": release.get("title", ""),
+                        "date": release.get("date", ""),
+                    }
+                )
+        return releases
+
     def _format_search_results(self, result: Dict) -> List[Dict]:
         """Format MusicBrainz results into a consistent structure."""
         formatted: List[Dict] = []
@@ -117,30 +161,10 @@ class MusicBrainzClient:
 
         for recording in result["recording-list"]:
             # EXTRACT ARTIST INFORMATION
-            artists = []
-            if "artist-credit" in recording:
-                for credit in recording["artist-credit"]:
-                    if isinstance(credit, dict) and "artist" in credit:
-                        artist = credit["artist"]
-                        artists.append(
-                            {
-                                "id": artist.get("id", ""),
-                                "name": artist.get("name", ""),
-                                "sort_name": artist.get("sort-name", ""),
-                            }
-                        )
+            artists = self._extract_artist_info(recording)
 
             # EXTRACT RELEASE INFORMATION
-            releases = []
-            if "release-list" in recording:
-                for release in recording["release-list"][:3]:  # Limit to 3 releases
-                    releases.append(
-                        {
-                            "id": release.get("id", ""),
-                            "title": release.get("title", ""),
-                            "date": release.get("date", ""),
-                        }
-                    )
+            releases = self._extract_release_info(recording)
 
             # BUILD FORMATTED RESULT
             formatted.append(
@@ -184,7 +208,7 @@ class MusicBrainzClient:
 
             return cast(Optional[Dict], formatted_details)
 
-        except Exception as e:  # noqa: BLE001
+        except (KeyError, ValueError, TypeError, musicbrainzngs.MusicBrainzError) as e:
             logger.error("Error getting recording details: %s", e)
             return None
 

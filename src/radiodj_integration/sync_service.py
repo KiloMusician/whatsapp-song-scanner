@@ -1,5 +1,6 @@
 """Sync MariaDB song requests with RadioDJ."""
 
+import time
 from typing import Dict, cast
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -86,8 +87,6 @@ class SyncService:
             db: Database session
             interval_seconds: Sync interval
         """
-        import time
-
         logger.info("Starting continuous sync with %ss interval", interval_seconds)
 
         while True:

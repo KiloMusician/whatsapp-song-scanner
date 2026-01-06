@@ -5,7 +5,7 @@ from typing import Dict
 
 from sqlalchemy.orm import Session
 
-from src.database.operations import ChatOperations, MessageOperations
+from src.database.operations import ChatOperations, MessageOperations, SongOperations
 from src.music_matching.matching_orchestrator import matching_orchestrator
 from src.text_processing.message_parser import message_parser
 from src.text_processing.text_cleaner import text_cleaner
@@ -66,7 +66,7 @@ class MessageHandler:
                 raw_text=body,
                 timestamp=timestamp,
             )
-        except Exception as exc:  # noqa: BLE001
+        except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
             logger.error("Error handling Twilio webhook: %s", exc)
             return False
 
@@ -114,7 +114,7 @@ class MessageHandler:
                 raw_text=raw_text,
                 timestamp=timestamp,
             )
-        except Exception as exc:  # noqa: BLE001
+        except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
             logger.error("Error handling Evolution message: %s", exc)
             return False
 
@@ -177,8 +177,6 @@ class MessageHandler:
             logger.info("Found %s song candidates in message", len(candidates))
 
             # STEP 5: Process each candidate
-            from src.database.operations import SongOperations
-
             for candidate in candidates:
                 try:
                     # Create extraction record
@@ -199,7 +197,7 @@ class MessageHandler:
                         chat_id=chat_id,
                         requested_by=sender_name,
                     )
-                except Exception as exc:  # noqa: BLE001
+                except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
                     logger.error("Error processing candidate: %s", exc)
                     continue
 
@@ -209,11 +207,11 @@ class MessageHandler:
             logger.info("Successfully processed message %s", message_id)
             return True
 
-        except Exception as exc:  # noqa: BLE001
+        except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
             logger.error("Error processing message: %s", exc)
             try:
                 MessageOperations.record_processing_error(db, message_id_int, str(exc))
-            except Exception:  # noqa: BLE001
+            except (RuntimeError, ValueError, KeyError):
                 pass
             return False
 

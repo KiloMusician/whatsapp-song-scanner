@@ -11,6 +11,7 @@ from config.settings import APP_CONFIG
 from src.core.health_check import health_check
 from src.core.scheduler import scheduler
 from src.core.state_manager import state_manager
+from src.database.models import init_database
 from src.database.operations import RequestOperations
 from src.utils.logger import get_logger
 from src.whatsapp.message_handler import message_handler
@@ -184,8 +185,6 @@ def scan_status():
 def initialize_app():
     """Initialize application."""
     logger.info("Initializing WhatsApp Song Scanner...")
-
-    from src.database.models import init_database  # noqa: E402
 
     try:
         init_database()

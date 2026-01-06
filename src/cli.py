@@ -17,7 +17,6 @@ logger = get_logger(__name__)
 @click.version_option(version="1.0.0")
 def cli():
     """WhatsApp Song Scanner CLI - Manage song requests from WhatsApp to RadioDJ."""
-    pass
 
 
 @cli.command()
@@ -47,7 +46,7 @@ def scan(chat_id):
             for chat_name, count in results.items():
                 click.echo(f"  - {chat_name}: {count} messages")
         state_manager.update_last_scan()
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error during scan: {e}", err=True)
         logger.error("Scan error: %s", e)
     finally:
@@ -76,7 +75,7 @@ def sync(limit):
         click.echo(f"  - Synced: {stats['synced']}")
         click.echo(f"  - Failed: {stats['failed']}")
         state_manager.update_last_sync()
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error during sync: {e}", err=True)
         logger.error("Sync error: %s", e)
     finally:
@@ -129,7 +128,7 @@ def list_chats():
             click.echo(f"  Name: {chat.chat_name or 'Unknown'}")
             click.echo(f"  Last scan: {chat.last_scan_time or 'Never'}")
             click.echo()
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error listing chats: {e}", err=True)
         logger.error("List chats error: %s", e)
     finally:
@@ -164,7 +163,7 @@ def list_requests(limit):
             click.echo(f"  Status: {req.status}")
             click.echo(f"  Created: {req.created_at}")
             click.echo()
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error listing requests: {e}", err=True)
         logger.error("List requests error: %s", e)
     finally:
@@ -188,7 +187,7 @@ def approve(request_id):
 
         RequestOperations.approve_request(db, request_id)
         click.echo(f"✓ Request {request_id} approved.")
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error approving request: {e}", err=True)
         logger.error("Approve request error: %s", e)
     finally:
@@ -209,7 +208,7 @@ def reject(request_id, notes):
     try:
         RequestOperations.reject_request(db, request_id, notes)
         click.echo(f"✓ Request {request_id} rejected.")
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, ValueError, OSError, KeyError, AttributeError) as e:
         click.echo(f"✗ Error rejecting request: {e}", err=True)
         logger.error("Reject request error: %s", e)
     finally:

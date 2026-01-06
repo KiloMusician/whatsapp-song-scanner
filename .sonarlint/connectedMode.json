@@ -1,0 +1,13 @@
+{
+  "projectKey": "whatsapp-song-scanner",
+  "serverId": "",
+  "settings": {},
+  "excludedPaths": [
+    "**/AppData/Local/Programs/Python/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/site-packages/**",
+    "**/lib/python*/**",
+    "**/Python*/Lib/**"
+  ]
+}

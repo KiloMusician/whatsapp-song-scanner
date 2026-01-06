@@ -1,0 +1,7 @@
+# Ignore Python standard library and virtual environments
+**/AppData/Local/Programs/Python/**
+**/.venv/**
+**/venv/**
+**/site-packages/**
+**/lib/python*/**
+**/Python*/Lib/**

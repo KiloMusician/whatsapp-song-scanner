@@ -49,7 +49,7 @@ class ChatScanner:
                 success = self.handler.handle_evolution_message(db, message)
                 if success:
                     processed += 1
-            except Exception as exc:  # noqa: BLE001
+            except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
                 logger.error("Error processing message: %s", exc)
                 continue
 
@@ -78,7 +78,7 @@ class ChatScanner:
             try:
                 count = self.scan_chat(db, chat_id)
                 results[chat_id] = count
-            except Exception as exc:  # noqa: BLE001
+            except (RuntimeError, ValueError, KeyError, AttributeError) as exc:
                 logger.error("Error scanning chat %s: %s", chat_id, exc)
                 results[chat_id] = 0
                 continue
