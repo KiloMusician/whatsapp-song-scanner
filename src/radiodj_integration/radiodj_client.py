@@ -1,9 +1,11 @@
 """RadioDJ client for API and database integration."""
 
 import sqlite3
-import requests
-from typing import Dict, Optional
 from pathlib import Path
+from typing import Dict, Optional, cast
+
+import requests
+
 from config.settings import DATABASE_CONFIG
 from src.utils.logger import get_logger
 
@@ -23,7 +25,9 @@ class RadioDJClient:
 
         logger.info("RadioDJ client initialized")
 
-    def add_track_via_api(self, artist: str, title: str, playlist_id: int = None) -> bool:
+    def add_track_via_api(
+        self, artist: str, title: str, playlist_id: Optional[int] = None
+    ) -> bool:
         """Add track to RadioDJ queue via API.
 
         Args:
@@ -39,7 +43,7 @@ class RadioDJClient:
             return False
 
         try:
-            endpoint = f"{self.api_url}/addtrack"
+            endpoint = f"{self.api_url}/addtrack"  # cspell:ignore addtrack
             payload = {
                 "artist": artist,
                 "title": title,
@@ -87,7 +91,7 @@ class RadioDJClient:
             conn.close()
 
             if result:
-                track_id = result[0]
+                track_id = cast(int, result[0])
                 logger.info("Found track in library: ID=%s", track_id)
                 return track_id
             else:

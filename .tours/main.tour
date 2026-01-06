@@ -1,0 +1,78 @@
+{
+  "title": "1 - WhatsApp Song Scanner (Primary)",
+  "description": "Start here to understand the end-to-end WhatsApp → MariaDB → RadioDJ pipeline.",
+  "ref": "main",
+  "isPrimary": true,
+  "steps": [
+    {
+      "title": "Welcome & mental model",
+      "description": "This tour orients you to the production-ready WhatsApp Song Scanner. It listens to WhatsApp webhooks, extracts song requests, matches them via MusicBrainz + fuzzy scoring, stores them in MariaDB, and syncs approved picks to RadioDJ. Keep README.md and QUICK_START.md handy for ops and .env setup."
+    },
+    {
+      "title": "Config & environment",
+      "file": "config/settings.py",
+      "pattern": "WHATSAPP_CONFIG",
+      "description": "All runtime knobs come from .env: choose provider (twilio|evolution), webhook URLs, scan cadence, MusicBrainz rate limits, Redis, MariaDB, and RadioDJ defaults. Copy .env.example → .env, then adjust values before running."
+    },
+    {
+      "title": "Flask entrypoint & API surface",
+      "file": "src/main.py",
+      "pattern": "app = Flask",
+      "description": "Flask wires the HTTP layer: health/metrics, Twilio and Evolution webhooks, pending/approve/reject request APIs, scan status, plus the dashboard at /. initialize_app() bootstraps the DB and kicks off the scheduler before app.run()."
+    },
+    {
+      "title": "Webhook ingestion → processing",
+      "file": "src/whatsapp/message_handler.py",
+      "pattern": "def process_message",
+      "description": "Both Twilio and Evolution messages flow through process_message(): ensure chat, persist raw message, clean text, parse song candidates, match & request creation, then mark processed. Errors are recorded per message for retry visibility."
+    },
+    {
+      "title": "Cleaning + extraction patterns",
+      "file": "src/text_processing/message_parser.py",
+      "pattern": "self.patterns",
+      "description": "TextCleaner strips URLs/emails/emoji/system noise; MessageParser runs regex patterns like \"play <title> by <artist>\" or \"Artist - Song\" to emit candidates with confidence scores. Tune patterns or scoring here to change what counts as a request."
+    },
+    {
+      "title": "MusicBrainz + fuzzy matching",
+      "file": "src/music_matching/matching_orchestrator.py",
+      "pattern": "match_song",
+      "description": "Orchestrator searches MusicBrainz, ranks candidates via fuzzy matcher, validates, stores MatchedSong rows, and auto-approves when confidence is strong. process_extraction then opens a SongRequest and optionally approves immediately."
+    },
+    {
+      "title": "Data model (MariaDB ORM)",
+      "file": "src/database/models.py",
+      "pattern": "class SongRequest",
+      "description": "Models track chats → messages → extracted songs → matched songs → requests. Relationships enable cascading cleanup and joining pending requests with their matched metadata. init_database() builds tables from this schema at startup."
+    },
+    {
+      "title": "Scheduled jobs",
+      "file": "src/core/scheduler.py",
+      "pattern": "class Scheduler",
+      "description": "BackgroundScheduler runs two loops: chat scans (minutes from SCAN_INTERVAL) and RadioDJ sync every 2 minutes. Each job updates state_manager stats and handles its own DB session, keeping the bot warm without manual triggers."
+    },
+    {
+      "title": "Chat polling helper",
+      "file": "src/whatsapp/chat_scanner.py",
+      "pattern": "scan_all_active_chats",
+      "description": "When scheduled, chat_scanner enumerates active chats, pulls recent messages from the configured provider (Evolution supports polling), and reuses message_handler to drive the same pipeline as live webhooks."
+    },
+    {
+      "title": "RadioDJ sync",
+      "file": "src/radiodj_integration/sync_service.py",
+      "pattern": "sync_approved_requests",
+      "description": "Approved SongRequests are pushed to RadioDJ via playlist_manager (API or DB). Successful pushes mark requests queued and record the RadioDJ track id; failures are counted so you can alert."
+    },
+    {
+      "title": "Dashboard UI",
+      "file": "src/dashboard.html",
+      "pattern": "WhatsApp Song Scanner - Dashboard",
+      "description": "Single-page HTML/CSS/JS served from /. Shows health, counts, pending approvals with inline approve/reject, auto-refresh, and notifications—no external deps. Update styling or polling here."
+    },
+    {
+      "title": "Containers & dependencies",
+      "file": "docker/docker-compose.yml",
+      "pattern": "song-scanner-bot",
+      "description": "Docker Compose brings up the Flask bot, MariaDB (with schema init), Redis, optional Evolution API, and Adminer. Use make up or docker-compose -f docker/docker-compose.yml up -d after filling .env to run the full stack."
+    }
+  ]
+}

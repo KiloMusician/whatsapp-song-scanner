@@ -1,6 +1,7 @@
 """Manage RadioDJ playlists."""
 
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional, cast
+
 from src.radiodj_integration.radiodj_client import radiodj_client
 from src.utils.logger import get_logger
 
@@ -15,7 +16,7 @@ class PlaylistManager:
         self.client = radiodj_client
 
     def add_song_to_playlist(
-        self, artist: str, title: str, playlist_id: int = None, use_api: bool = True
+        self, artist: str, title: str, playlist_id: Optional[int] = None, use_api: bool = True
     ) -> Optional[int]:
         """Add song to RadioDJ playlist.
 
@@ -28,7 +29,7 @@ class PlaylistManager:
         Returns:
             Track ID if successful, None otherwise
         """
-        logger.info(f"Adding to playlist: {artist} - {title}")
+        logger.info("Adding to playlist: %s - %s", artist, title)
 
         if use_api:
             # TRY API FIRST
@@ -49,12 +50,14 @@ class PlaylistManager:
         # Add to queue
         success = self.client.add_track_to_queue_db(track_id)
         if success:
-            logger.info(f"Successfully added track {track_id} to queue")
-            return track_id
+            logger.info("Successfully added track %s to queue", track_id)
+            return cast(int, track_id)
 
         return None
 
-    def bulk_add_songs(self, songs: List[Dict], playlist_id: int = None) -> Dict[str, int]:
+    def bulk_add_songs(
+        self, songs: List[Dict], playlist_id: Optional[int] = None
+    ) -> Dict[str, int]:
         """Add multiple songs to playlist.
 
         Args:
@@ -83,7 +86,7 @@ class PlaylistManager:
             else:
                 results["failed"] += 1
 
-        logger.info(f"Bulk add results: {results}")
+        logger.info("Bulk add results: %s", results)
         return results
 
 

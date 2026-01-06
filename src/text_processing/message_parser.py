@@ -2,6 +2,7 @@
 
 import re
 from typing import Dict, List
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -17,7 +18,8 @@ class MessageParser:
             # "play Song by Artist"
             (
                 re.compile(
-                    r'play\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+(?P<artist>[^"\'.]+)',
+                    r'play\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+'
+                    r'(?P<artist>[^"\'.]+)',
                     re.IGNORECASE,
                 ),
                 "play_by",
@@ -25,7 +27,8 @@ class MessageParser:
             # "request: Artist - Song"
             (
                 re.compile(
-                    r'request:?\s+(?P<artist>[^-]+)\s*-\s*(?P<title>[^"\'.]+)', re.IGNORECASE
+                    r'request:?\s+(?P<artist>[^-]+)\s*-\s*(?P<title>[^"\'.]+)',
+                    re.IGNORECASE,
                 ),
                 "request_dash",
             ),
@@ -42,7 +45,8 @@ class MessageParser:
             # "I want to hear Song by Artist"
             (
                 re.compile(
-                    r'(?:i\s+)?want\s+to\s+hear\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+(?P<artist>[^"\'.]+)',
+                    r'(?:i\s+)?want\s+to\s+hear\s+["\']?(?P<title>[^"\']+?)["\']?\s+by\s+'
+                    r'(?P<artist>[^"\'.]+)',
                     re.IGNORECASE,
                 ),
                 "want_to_hear",

@@ -1,7 +1,10 @@
 """Sync MariaDB song requests with RadioDJ."""
 
-from typing import Dict
+from typing import Dict, cast
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+
 from src.database.operations import RequestOperations
 from src.radiodj_integration.playlist_manager import playlist_manager
 from src.utils.logger import get_logger
@@ -32,7 +35,7 @@ class SyncService:
         requests = RequestOperations.get_pending_requests(db, limit)
 
         # Filter for approved status
-        approved_requests = [r for r in requests if r.status == "approved"]
+        approved_requests = [r for r in requests if getattr(r, "status", None) == "approved"]
 
         if not approved_requests:
             logger.info("No approved requests to sync")
@@ -54,22 +57,26 @@ class SyncService:
                 )
 
                 if track_id is not None:
-                    # Mark as queued
-                    RequestOperations.mark_queued(
-                        db, request.id, track_id if track_id > 0 else None
-                    )
+                    request_id_int = cast(int, request.id)
+                    track_id_int = int(track_id) if track_id > 0 else None
+
+                    # Mark as queued (omit track id when not available)
+                    if track_id_int is not None:
+                        RequestOperations.mark_queued(db, request_id_int, track_id_int)
+                    else:
+                        RequestOperations.mark_queued(db, request_id_int)
                     stats["synced"] += 1
-                    logger.info(f"Synced request {request.id}: {artist} - {title}")
+                    logger.info("Synced request %s: %s - %s", request.id, artist, title)
                 else:
                     stats["failed"] += 1
-                    logger.warning(f"Failed to sync request {request.id}: {artist} - {title}")
+                    logger.warning("Failed to sync request %s: %s - %s", request.id, artist, title)
 
-            except Exception as e:
-                logger.error(f"Error syncing request {request.id}: {e}")
+            except (SQLAlchemyError, ValueError, RuntimeError) as exc:
+                logger.error("Error syncing request %s: %s", request.id, exc)
                 stats["failed"] += 1
                 continue
 
-        logger.info(f"Sync completed: {stats}")
+        logger.info("Sync completed: %s", stats)
         return stats
 
     def run_continuous_sync(self, db: Session, interval_seconds: int = 60):
@@ -81,14 +88,14 @@ class SyncService:
         """
         import time
 
-        logger.info(f"Starting continuous sync with {interval_seconds}s interval")
+        logger.info("Starting continuous sync with %ss interval", interval_seconds)
 
         while True:
             try:
                 self.sync_approved_requests(db)
                 time.sleep(interval_seconds)
-            except Exception as e:
-                logger.error(f"Error in continuous sync: {e}")
+            except (SQLAlchemyError, ValueError, RuntimeError) as exc:
+                logger.error("Error in continuous sync: %s", exc)
                 time.sleep(interval_seconds)
 
 

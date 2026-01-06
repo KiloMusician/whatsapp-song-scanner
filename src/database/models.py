@@ -1,9 +1,23 @@
 """Database models for WhatsApp Song Scanner."""
 
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float, JSON
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
+
 from config.database import Base, engine
+
+CASCADE_DELETE_ORPHAN = "all, delete-orphan"
 
 
 class WhatsAppChat(Base):
@@ -21,12 +35,16 @@ class WhatsAppChat(Base):
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),  # cspell:ignore onupdate
     )
 
     # RELATIONSHIPS
-    messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan")
-    song_requests = relationship("SongRequest", back_populates="chat", cascade="all, delete-orphan")
+    messages = relationship(
+        "ChatMessage", back_populates="chat", cascade=CASCADE_DELETE_ORPHAN
+    )
+    song_requests = relationship(
+        "SongRequest", back_populates="chat", cascade=CASCADE_DELETE_ORPHAN
+    )
 
 
 class ChatMessage(Base):
@@ -50,7 +68,9 @@ class ChatMessage(Base):
     # RELATIONSHIPS
     chat = relationship("WhatsAppChat", back_populates="messages")
     extracted_songs = relationship(
-        "ExtractedSong", back_populates="message", cascade="all, delete-orphan"
+        "ExtractedSong",
+        back_populates="message",
+        cascade=CASCADE_DELETE_ORPHAN,
     )
 
 
@@ -69,7 +89,9 @@ class ExtractedSong(Base):
     # RELATIONSHIPS
     message = relationship("ChatMessage", back_populates="extracted_songs")
     matched_results = relationship(
-        "MatchedSong", back_populates="extraction", cascade="all, delete-orphan"
+        "MatchedSong",
+        back_populates="extraction",
+        cascade=CASCADE_DELETE_ORPHAN,
     )
 
 
@@ -96,7 +118,9 @@ class MatchedSong(Base):
     # RELATIONSHIPS
     extraction = relationship("ExtractedSong", back_populates="matched_results")
     requests = relationship(
-        "SongRequest", back_populates="matched_song", cascade="all, delete-orphan"
+        "SongRequest",
+        back_populates="matched_song",
+        cascade=CASCADE_DELETE_ORPHAN,
     )
 
 
@@ -125,7 +149,7 @@ class SongRequest(Base):
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),  # cspell:ignore onupdate
     )
 
     # RELATIONSHIPS
