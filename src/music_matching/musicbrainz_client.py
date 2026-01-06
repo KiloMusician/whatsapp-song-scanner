@@ -1,15 +1,17 @@
 """MusicBrainz API client with rate limiting and caching."""
 
-import musicbrainzngs
-import time
 import hashlib
 import json
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, cast
+
+import musicbrainzngs
+
 from config.settings import MUSIC_MATCHING_CONFIG
 from src.utils.cache import cache_manager
-from src.utils.rate_limiter import RateLimiter
 from src.utils.logger import get_logger
+from src.utils.rate_limiter import RateLimiter
 
 logger = get_logger(__name__)
 

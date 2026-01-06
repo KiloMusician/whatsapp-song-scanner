@@ -1,7 +1,8 @@
 """Application state management."""
 
 from datetime import datetime, timezone
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
+
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)

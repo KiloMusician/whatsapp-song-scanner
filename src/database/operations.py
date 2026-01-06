@@ -1,10 +1,18 @@
 """Database CRUD operations."""
 
-from typing import List, Optional
 from datetime import datetime, timezone
-from sqlalchemy.orm import Session
+from typing import List, Optional
+
 from sqlalchemy import desc
-from src.database.models import WhatsAppChat, ChatMessage, ExtractedSong, MatchedSong, SongRequest
+from sqlalchemy.orm import Session
+
+from src.database.models import (
+    ChatMessage,
+    ExtractedSong,
+    MatchedSong,
+    SongRequest,
+    WhatsAppChat,
+)
 
 
 class ChatOperations:

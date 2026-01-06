@@ -5,7 +5,7 @@ A production-ready system that scans WhatsApp chats for song requests, matches t
 ## ✨ Features
 
 - **WhatsApp Integration**: Supports both Twilio WhatsApp API and Evolution API
-- **Intelligent Song Matching**: Uses MusicBrainz with fuzzy matching and confidence scoring
+- **Intelligent Song Matching**: Uses MusicBrainz with fuzzy matching and confidence scoring bn nm
 - **Database Storage**: Complete MariaDB schema for tracking chats, messages, songs, and requests
 - **RadioDJ Integration**: Automated playlist addition via API or direct database access
 - **Modular Architecture**: Clean separation of concerns for easy maintenance
@@ -97,6 +97,238 @@ RADIODJ_DB_PATH=/path/to/radiodj/database.sqlite
 ```
 
 ### WhatsApp Setup
+
+#### Using Evolution API (Recommended)
+
+1. Install and run Evolution API: `docker run -d evolution-api`
+2. Configure webhook in `.env` pointing to your server
+3. Link phone number via Evolution dashboard
+
+#### Using Twilio
+
+1. Create Twilio Business Account at twilio.com
+2. Get WhatsApp Business Account credentials
+3. Configure webhook URL for incoming messages
+4. Update `.env` with credentials
+
+## 🛠️ CLI Commands
+
+The CLI provides manual operations for testing and management:
+
+```bash
+# Show status and statistics
+python -m src.cli status
+
+# Scan WhatsApp chats
+python -m src.cli scan                    # Scan all active chats
+python -m src.cli scan --chat-id=123      # Scan specific chat
+
+# Sync to RadioDJ
+python -m src.cli sync                    # Sync up to 50 requests
+python -m src.cli sync --limit=10         # Sync custom limit
+
+# Manage song requests
+python -m src.cli list-requests           # Show pending requests
+python -m src.cli approve 5               # Approve request #5
+python -m src.cli reject 5 --notes="N/A"  # Reject request #5
+
+# List chats
+python -m src.cli list-chats             # Show all active chats
+```
+
+## 📡 API Endpoints
+
+### Health & Status
+
+- `GET /api/v1/health` - Health check
+- `GET /api/v1/metrics` - Application metrics
+- `GET /api/v1/status` - Current status
+
+### Webhooks
+
+- `POST /api/v1/webhook/twilio` - Twilio WhatsApp messages
+- `POST /api/v1/webhook/evolution` - Evolution API messages
+
+### Song Requests (if exposed)
+
+- `GET /api/v1/requests` - List pending requests
+- `PUT /api/v1/requests/:id/approve` - Approve request
+- `PUT /api/v1/requests/:id/reject` - Reject request
+
+## 🧪 Testing
+
+```bash
+# Run all tests with coverage
+pytest -v --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_text_processing.py -v
+
+# Run with coverage report
+pytest --cov=src --cov-report=term-missing
+```
+
+**Current Coverage**: 50% (32/32 tests passing)
+
+## 🔍 Code Quality
+
+All code passes quality checks:
+
+```bash
+# Type checking
+mypy src/
+
+# Linting
+flake8 src/
+
+# Code formatting
+black src/
+
+# Import sorting
+isort src/
+```
+
+## 🐳 Docker Deployment
+
+### Start Services
+
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+### Services
+
+- **song-scanner-bot**: Flask application (port 5000)
+- **mariadb**: Database (port 3306)
+- **redis**: Cache layer (port 6379)
+- **evolution-api**: WhatsApp integration (port 8080)
+- **adminer**: Database management UI (port 8081)
+
+### View Logs
+
+```bash
+docker-compose -f docker/docker-compose.yml logs -f song-scanner-bot
+```
+
+### Stop Services
+
+```bash
+docker-compose -f docker/docker-compose.yml down
+```
+
+## 📁 Project Structure
+
+```
+whatsapp-song-scanner/
+├── src/
+│   ├── main.py                 # Flask application entry point
+│   ├── cli.py                  # CLI commands
+│   ├── core/                   # Core functionality
+│   │   ├── scheduler.py        # Background job scheduling
+│   │   ├── health_check.py     # Health monitoring
+│   │   └── state_manager.py    # Application state
+│   ├── database/               # Database models and operations
+│   │   ├── models.py           # SQLAlchemy ORM models
+│   │   └── operations.py       # CRUD operations
+│   ├── whatsapp/               # WhatsApp integration
+│   │   ├── client.py           # WhatsApp client
+│   │   ├── message_handler.py  # Message processing
+│   │   └── chat_scanner.py     # Chat scanning logic
+│   ├── text_processing/        # Text analysis
+│   │   ├── text_cleaner.py     # Text normalization
+│   │   ├── message_parser.py   # Pattern extraction
+│   │   └── keyword_extractor.py
+│   ├── music_matching/         # Music database matching
+│   │   ├── musicbrainz_client.py
+│   │   ├── fuzzy_matcher.py    # Fuzzy matching logic
+│   │   ├── song_validator.py   # Match validation
+│   │   └── matching_orchestrator.py
+│   ├── radiodj_integration/    # RadioDJ sync
+│   │   ├── radiodj_client.py
+│   │   ├── playlist_manager.py
+│   │   └── sync_service.py
+│   └── utils/                  # Utilities
+│       ├── logger.py
+│       ├── cache.py
+│       └── rate_limiter.py
+├── config/                     # Configuration
+│   ├── settings.py
+│   ├── database.py
+│   └── logging_config.py
+├── docker/                     # Docker configuration
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── tests/                      # Test suite
+│   ├── unit/
+│   ├── integration/
+│   └── conftest.py
+├── .github/workflows/          # CI/CD pipelines
+│   └── ci.yml
+└── requirements.txt            # Production dependencies
+```
+
+## 📊 Database Schema
+
+### Core Tables
+
+- **whatsapp_chats**: Tracks WhatsApp chats being scanned
+- **chat_messages**: Individual messages with text and metadata
+- **extracted_songs**: Song titles/artists extracted from messages
+- **matched_songs**: Verified matches from MusicBrainz with confidence scores
+- **song_requests**: Final song requests pending RadioDJ approval
+
+## 🔧 Troubleshooting
+
+### Issue: "ModuleNotFoundError: No module named 'src'"
+
+**Solution**: Install the package in development mode:
+```bash
+pip install -e .
+```
+
+### Issue: Database connection fails
+
+**Solution**: Check MariaDB is running:
+```bash
+docker-compose -f docker/docker-compose.yml logs mariadb
+```
+
+### Issue: WhatsApp webhooks not receiving messages
+
+**Solution**: 
+1. Verify webhook URL is publicly accessible
+2. Check firewall/NAT settings
+3. Verify API credentials in `.env`
+4. Check application logs: `docker-compose logs song-scanner-bot`
+
+## 📈 Performance & Monitoring
+
+- **APScheduler**: Background job scheduling (5-min scan, 2-min sync intervals)
+- **Logging**: Structured logging with rotating file handlers
+- **Caching**: Redis integration for rate limit and results caching
+- **Health Checks**: Endpoint monitoring and status reporting
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes and ensure tests pass
+4. Commit with clear message (`git commit -m 'Add amazing feature'`)
+5. Push to branch (`git push origin feature/amazing-feature`)
+6. Open Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- [MusicBrainz](https://musicbrainz.org/) for music database API
+- [Twilio](https://www.twilio.com/) for WhatsApp integration
+- [Evolution API](https://github.com/EvolutionAPI/evolution-api) for alternative WhatsApp integration
+- [RadioDJ](http://www.radiodj.ro/) for radio automation software
+- [Flask](https://flask.palletsprojects.com/) for web framework
+- [SQLAlchemy](https://www.sqlalchemy.org/) for ORM
 
 #### Option 1: Evolution API (Recommended for Testing)
 
