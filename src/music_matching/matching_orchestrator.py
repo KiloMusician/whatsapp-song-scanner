@@ -1,6 +1,6 @@
 """Orchestrate the matching process."""
 
-from typing import Dict, Optional
+from typing import Dict, Optional, cast
 from sqlalchemy.orm import Session
 from src.music_matching.musicbrainz_client import musicbrainz_client
 from src.music_matching.fuzzy_matcher import fuzzy_matcher
@@ -21,7 +21,7 @@ class MatchingOrchestrator:
         self.validator = song_validator
 
     def match_song(
-        self, db: Session, extraction_id: int, title: str, artist: str = None
+        self, db: Session, extraction_id: int, title: str, artist: Optional[str] = None
     ) -> Optional[Dict]:
         """Match a song through the complete pipeline.
 
@@ -77,7 +77,7 @@ class MatchingOrchestrator:
 
         # STEP 5: Check if should auto-approve
         if self.validator.should_auto_approve(best_match, confidence):
-            SongOperations.verify_match(db, matched_song.id, "auto_approve")
+            SongOperations.verify_match(db, cast(int, matched_song.id), "auto_approve")
             logger.info("Match auto-approved: %s", best_match['title'])
 
         logger.info(

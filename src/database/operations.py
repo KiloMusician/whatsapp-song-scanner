@@ -1,6 +1,6 @@
 """Database CRUD operations."""
 
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -11,13 +11,13 @@ class ChatOperations:
     """Operations for WhatsApp chats."""
 
     @staticmethod
-    def create_or_update_chat(db: Session, chat_id: str, chat_name: str = None) -> WhatsAppChat:
+    def create_or_update_chat(db: Session, chat_id: str, chat_name: Optional[str] = None) -> WhatsAppChat:
         """Create or update a WhatsApp chat."""
         chat = db.query(WhatsAppChat).filter(WhatsAppChat.chat_id == chat_id).first()
         if chat:
             if chat_name:
-                chat.chat_name = chat_name
-            chat.updated_at = datetime.now(timezone.utc)
+                chat.chat_name = chat_name  # type: ignore[assignment]
+            chat.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
         else:
             chat = WhatsAppChat(chat_id=chat_id, chat_name=chat_name)
             db.add(chat)
@@ -31,13 +31,13 @@ class ChatOperations:
         return db.query(WhatsAppChat).filter(WhatsAppChat.is_active.is_(True)).all()
 
     @staticmethod
-    def update_last_scan(db: Session, chat_id: str, message_id: str = None):
+    def update_last_scan(db: Session, chat_id: str, message_id: Optional[str] = None):
         """Update last scan timestamp for a chat."""
         chat = db.query(WhatsAppChat).filter(WhatsAppChat.chat_id == chat_id).first()
         if chat:
-            chat.last_scan_time = datetime.now(timezone.utc)
+            chat.last_scan_time = datetime.now(timezone.utc)  # type: ignore[assignment]
             if message_id:
-                chat.last_message_id = message_id
+                chat.last_message_id = message_id  # type: ignore[assignment]
             db.commit()
 
 
@@ -80,13 +80,13 @@ class MessageOperations:
         )
 
     @staticmethod
-    def mark_processed(db: Session, message_id: int, cleaned_text: str = None):
+    def mark_processed(db: Session, message_id: int, cleaned_text: Optional[str] = None):
         """Mark message as processed."""
         message = db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
         if message:
-            message.is_processed = True
+            message.is_processed = True  # type: ignore[assignment]
             if cleaned_text:
-                message.cleaned_text = cleaned_text
+                message.cleaned_text = cleaned_text  # type: ignore[assignment]
             db.commit()
 
     @staticmethod
@@ -94,8 +94,8 @@ class MessageOperations:
         """Record processing error."""
         message = db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
         if message:
-            message.processing_attempts += 1
-            message.processing_error = error
+            message.processing_attempts += 1  # type: ignore[assignment]
+            message.processing_error = error  # type: ignore[assignment]
             db.commit()
 
 
@@ -127,12 +127,12 @@ class SongOperations:
         db: Session,
         extraction_id: int,
         song_title: str,
-        artist_name: str = None,
-        album_name: str = None,
-        musicbrainz_id: str = None,
-        match_confidence: float = None,
-        match_source: str = None,
-        match_metadata: dict = None,
+        artist_name: Optional[str] = None,
+        album_name: Optional[str] = None,
+        musicbrainz_id: Optional[str] = None,
+        match_confidence: Optional[float] = None,
+        match_source: Optional[str] = None,
+        match_metadata: Optional[dict] = None,
     ) -> MatchedSong:
         """Create a matched song entry."""
         match = MatchedSong(
@@ -155,8 +155,8 @@ class SongOperations:
         """Mark match as verified."""
         match = db.query(MatchedSong).filter(MatchedSong.id == match_id).first()
         if match:
-            match.is_verified = True
-            match.verification_method = method
+            match.is_verified = True  # type: ignore[assignment]
+            match.verification_method = method  # type: ignore[assignment]
             db.commit()
 
 
@@ -195,30 +195,30 @@ class RequestOperations:
         """Approve a request."""
         request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if request:
-            request.status = "approved"
-            request.updated_at = datetime.now(timezone.utc)
+            request.status = "approved"  # type: ignore[assignment]
+            request.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             db.commit()
 
     @staticmethod
-    def reject_request(db: Session, request_id: int, notes: str = None):
+    def reject_request(db: Session, request_id: int, notes: Optional[str] = None):
         """Reject a request."""
         request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if request:
-            request.status = "rejected"
+            request.status = "rejected"  # type: ignore[assignment]
             if notes:
-                request.notes = notes
-            request.updated_at = datetime.now(timezone.utc)
+                request.notes = notes  # type: ignore[assignment]
+            request.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             db.commit()
 
     @staticmethod
-    def mark_queued(db: Session, request_id: int, radiodj_track_id: int = None):
+    def mark_queued(db: Session, request_id: int, radiodj_track_id: Optional[int] = None):
         """Mark request as queued in RadioDJ."""
         request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if request:
-            request.status = "queued"
+            request.status = "queued"  # type: ignore[assignment]
             if radiodj_track_id:
-                request.radiodj_track_id = radiodj_track_id
-            request.updated_at = datetime.now(timezone.utc)
+                request.radiodj_track_id = radiodj_track_id  # type: ignore[assignment]
+            request.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             db.commit()
 
     @staticmethod
@@ -226,8 +226,8 @@ class RequestOperations:
         """Mark request as played."""
         request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if request:
-            request.status = "played"
-            request.actual_play_time = datetime.now(timezone.utc)
-            request.play_count += 1
-            request.updated_at = datetime.now(timezone.utc)
+            request.status = "played"  # type: ignore[assignment]
+            request.actual_play_time = datetime.now(timezone.utc)  # type: ignore[assignment]
+            request.play_count += 1  # type: ignore[assignment]
+            request.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             db.commit()

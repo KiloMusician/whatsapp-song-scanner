@@ -1,7 +1,7 @@
 """Application state management."""
 
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Dict, Any, cast
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,11 +46,11 @@ class StateManager:
 
     def get_state(self) -> Dict[str, Any]:
         """Get current state."""
-        return self.state.copy()
+        return cast(Dict[str, Any], self.state.copy())
 
     def get_uptime_seconds(self) -> float:
         """Get application uptime in seconds."""
-        delta = datetime.now(timezone.utc) - self.state["started_at"]
+        delta = datetime.now(timezone.utc) - cast(datetime, self.state["started_at"])
         return delta.total_seconds()
 
 

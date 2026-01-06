@@ -5,7 +5,7 @@ import time
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 from config.settings import MUSIC_MATCHING_CONFIG
 from src.utils.cache import cache_manager
 from src.utils.rate_limiter import RateLimiter
@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 # CONFIGURE MUSICBRAINZ
 musicbrainzngs.set_useragent(
-    MUSIC_MATCHING_CONFIG["musicbrainz"]["user_agent"],
+    MUSIC_MATCHING_CONFIG["musicbrainz"]["user_agent"],  # type: ignore[index]
     "1.0.0",
     "https://github.com/KiloMusician/whatsapp-song-scanner",
 )
@@ -34,7 +34,7 @@ class MusicBrainzClient:
         )
         logger.info("MusicBrainz client initialized")
 
-    def search_song(self, song_title: str, artist_name: str = None) -> List[Dict]:
+    def search_song(self, song_title: str, artist_name: Optional[str] = None) -> List[Dict]:
         """Search for a song using MusicBrainz API.
 
         Args:
@@ -51,7 +51,7 @@ class MusicBrainzClient:
         cached_result = cache_manager.get(cache_key)
         if cached_result:
             logger.debug(f"Cache hit for: {song_title}")
-            return json.loads(cached_result)
+            return cast(List[Dict], json.loads(cached_result))
 
         # ENFORCE RATE LIMIT
         self.rate_limiter.wait()
@@ -80,7 +80,7 @@ class MusicBrainzClient:
             )
 
             logger.info("Found %s results for: %s", len(formatted_results), song_title)
-            return formatted_results
+            return cast(List[Dict], formatted_results)
 
         except musicbrainzngs.NetworkError as exc:
             logger.error("MusicBrainz network error: %s", exc)
@@ -97,7 +97,7 @@ class MusicBrainzClient:
         for attempt in range(max_retries):
             try:
                 result = musicbrainzngs.search_recordings(query=query, limit=10, offset=0)
-                return result
+                return cast(Dict, result)
             except musicbrainzngs.NetworkError:
                 if attempt == max_retries - 1:
                     raise
@@ -108,7 +108,7 @@ class MusicBrainzClient:
 
     def _format_search_results(self, result: Dict) -> List[Dict]:
         """Format MusicBrainz results into a consistent structure."""
-        formatted = []
+        formatted: List[Dict] = []
 
         if "recording-list" not in result:
             return formatted
@@ -163,7 +163,7 @@ class MusicBrainzClient:
 
         cached_result = cache_manager.get(cache_key)
         if cached_result:
-            return json.loads(cached_result)
+            return cast(Optional[Dict], json.loads(cached_result))
 
         self.rate_limiter.wait()
 
@@ -180,7 +180,7 @@ class MusicBrainzClient:
                 ttl=int(self.cache_duration.total_seconds()),
             )
 
-            return formatted_details
+            return cast(Optional[Dict], formatted_details)
 
         except Exception as e:
             logger.error(f"Error getting recording details: {e}")
@@ -199,7 +199,7 @@ class MusicBrainzClient:
             "disambiguation": recording.get("disambiguation", ""),
         }
 
-    def _generate_cache_key(self, song_title: str, artist_name: str = None) -> str:
+    def _generate_cache_key(self, song_title: str, artist_name: Optional[str] = None) -> str:
         """Generate a unique cache key for search queries."""
         key_string = f"{song_title.lower().strip()}"
         if artist_name:
