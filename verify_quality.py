@@ -23,9 +23,9 @@ def run_command(cmd, description):
             print(result.stdout)
         if result.stderr:
             print("STDERR:", result.stderr, file=sys.stderr)
-            
+
         return result.returncode == 0
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Error running command: {e}")
         return False
 

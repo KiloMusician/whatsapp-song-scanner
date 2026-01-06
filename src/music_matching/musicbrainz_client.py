@@ -52,7 +52,7 @@ class MusicBrainzClient:
         # CHECK CACHE FIRST
         cached_result = cache_manager.get(cache_key)
         if cached_result:
-            logger.debug(f"Cache hit for: {song_title}")
+            logger.debug("Cache hit for: %s", song_title)
             return cast(List[Dict], json.loads(cached_result))
 
         # ENFORCE RATE LIMIT
@@ -66,7 +66,7 @@ class MusicBrainzClient:
 
             search_query = " AND ".join(query_parts)
 
-            logger.info(f"Searching MusicBrainz: {search_query}")
+            logger.info("Searching MusicBrainz: %s", search_query)
 
             # PERFORM SEARCH WITH RETRY LOGIC
             result = self._search_with_retry(search_query)
@@ -184,8 +184,8 @@ class MusicBrainzClient:
 
             return cast(Optional[Dict], formatted_details)
 
-        except Exception as e:
-            logger.error(f"Error getting recording details: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Error getting recording details: %s", e)
             return None
 
     def _format_recording_details(self, result: Dict) -> Dict:

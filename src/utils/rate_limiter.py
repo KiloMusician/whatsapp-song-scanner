@@ -40,7 +40,7 @@ class RateLimiter:
             if self.allowance < 1.0:
                 # Calculate sleep time
                 sleep_time = (1.0 - self.allowance) * (self.period / self.calls)
-                logger.debug(f"Rate limit reached, sleeping for {sleep_time:.2f}s")
+                logger.debug("Rate limit reached, sleeping for %.2fs", sleep_time)
                 time.sleep(sleep_time)
                 self.allowance = 0.0
             else:

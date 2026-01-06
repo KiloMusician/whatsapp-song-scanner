@@ -83,7 +83,7 @@ class ChatScanner:
                 results[chat_id] = 0
                 continue
 
-        logger.info(f"Scanned {len(results)} chats")
+        logger.info("Scanned %d chats", len(results))
         return results
 
 
