@@ -1,4 +1,4 @@
-# 🎵 WhatsApp*NEED TO UPDATE EVERYWHERE TO TELEGRAM* Song Scanner Bot → MariaDB → RadioDJ
+# 🎵 Telegram Song Scanner Bot → MariaDB → RadioDJ
 
 A production-ready system that scans Telegram chats for song requests, matches them to music databases using MusicBrainz and fuzzy matching, stores verified results in MariaDB, and integrates with RadioDJ for automated playlist management.
 
@@ -78,7 +78,7 @@ Bohemian Rhapsody
 ### Prerequisites
 
 - Docker and Docker Compose
-- WhatsApp Business Account (Twilio) OR phone number (Evolution API)
+- Telegram Bot Token (from @BotFather)
 - Python 3.11+ (for local development)
 
 ### Installation

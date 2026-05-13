@@ -1,5 +1,7 @@
 
-# 🎉 COMPLETION REPORT - WhatsApp Song Scanner
+# 🎉 COMPLETION REPORT - Telegram Song Scanner
+
+**Note: WhatsApp integration is deprecated. The project now uses Telegram for all messaging functionality.**
 
 ## ✅ ALL TASKS COMPLETED
 

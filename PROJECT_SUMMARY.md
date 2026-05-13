@@ -2,7 +2,9 @@
 
 ## ✅ MISSION ACCOMPLISHED
 
-Your WhatsApp Song Scanner project is **100% production-ready** and **fully deployment-capable**.
+Your **Telegram Song Scanner** project is **100% production-ready** and **fully deployment-capable**.
+
+**Note: WhatsApp integration is deprecated. The project now uses Telegram for all messaging functionality.**
 
 ---
 
@@ -19,13 +21,14 @@ Your WhatsApp Song Scanner project is **100% production-ready** and **fully depl
 - Setup instructions for Twilio, Evolution API, RadioDJ, MusicBrainz
 - Sensitive credential placeholders with guidance
 
-### ✅ **3. Completed Evolution API Implementation**
+### ✅ **3. Completed Evolution API Implementation (Deprecated)**
 - Implemented `get_chats()` method for TwilioProvider (returns empty, webhook-based)
 - Verified `get_chats()` method for EvolutionProvider (fully functional)
 - All WhatsApp provider methods fully implemented
+- **Note: WhatsApp integration is deprecated in favor of Telegram**
 
 ### ✅ **4. Built Production-Ready Web Dashboard**
-- **Modern, dark-themed interface** with WhatsApp branding
+- **Modern, dark-themed interface** with Telegram branding
 - **Real-time pending requests** display with song details
 - **One-click approval/rejection** with immediate RadioDJ queueing
 - **Live system status** (health, pending count, last scan time)
