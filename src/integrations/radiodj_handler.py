@@ -108,8 +108,7 @@ def _save_track_mapping(db, musicbrainz_id: str, track: RadioDJTrack):
     try:
         from sqlalchemy import text
 
-        sql = text(
-            """
+        sql = text("""
             INSERT INTO radiodj_track_mapping
                 (musicbrainz_id, radiodj_track_id, title, artist, file_path)
             VALUES
@@ -120,8 +119,7 @@ def _save_track_mapping(db, musicbrainz_id: str, track: RadioDJTrack):
                 artist = :artist,
                 file_path = :path,
                 updated_at = CURRENT_TIMESTAMP
-            """
-        )
+            """)
 
         db.execute(
             sql,
@@ -153,7 +151,9 @@ def process_pending_requests() -> Dict[str, Any]:
         for request in pending:
             stats["processed"] += 1
             try:
-                match = db.query(MatchedSong).filter(MatchedSong.id == request.matched_song_id).first()
+                match = (
+                    db.query(MatchedSong).filter(MatchedSong.id == request.matched_song_id).first()
+                )
                 if not match:
                     continue
 

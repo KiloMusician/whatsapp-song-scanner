@@ -1,9 +1,9 @@
 """Fuzzy string matching for song titles and artists."""
 
+import re
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from thefuzz import fuzz
-import re
 
 from config.settings import MUSIC_MATCHING_CONFIG
 from src.utils.logger import get_logger
@@ -20,7 +20,7 @@ class FuzzyMatcher:
             Dict[str, Any], MUSIC_MATCHING_CONFIG.get("fuzzy_matching", {})
         )
         self.min_score: int = int(self.config.get("min_match_score", 80))
-        
+
         # Common artist name corrections for typos
         self.artist_corrections = {
             "hiatus koyote": "hiatus kaiyote",
@@ -28,7 +28,7 @@ class FuzzyMatcher:
             "haitus koyote": "hiatus kaiyote",
             "hiatus kaiyote": "hiatus kaiyote",  # Already correct
         }
-        
+
         logger.info(
             "Fuzzy matcher initialized with min_score=%s",
             self.min_score,
@@ -76,7 +76,7 @@ class FuzzyMatcher:
         # Apply typo corrections to query
         query_norm = self._normalize_artist(query)
         corrected_query = self.artist_corrections.get(query_norm, query_norm)
-        
+
         # Normalize both strings with artist-specific cleanup
         candidate_norm = self._normalize_artist(candidate)
 

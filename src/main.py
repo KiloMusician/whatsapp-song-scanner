@@ -14,8 +14,8 @@ from src.core.state_manager import state_manager
 from src.database.models import init_database
 from src.database.operations import RequestOperations
 from src.integrations.radiodj_handler import get_radiodj_status
-from src.utils.logger import get_logger
 from src.message_handler import message_handler
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

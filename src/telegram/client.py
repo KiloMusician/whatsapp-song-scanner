@@ -1,6 +1,7 @@
 """Simple Telegram bot client using HTTP API."""
-from typing import Optional
+
 import os
+from typing import Optional
 
 import requests
 

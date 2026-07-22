@@ -239,7 +239,8 @@ class RequestOperations:
             .filter(SongRequest.queue_terminal_failure.is_(False))
             .filter(SongRequest.radiodj_track_id.is_(None))
             .filter(
-                (SongRequest.next_queue_retry_at.is_(None)) | (SongRequest.next_queue_retry_at <= now)
+                (SongRequest.next_queue_retry_at.is_(None))
+                | (SongRequest.next_queue_retry_at <= now)
             )
             .order_by(desc(SongRequest.request_priority), SongRequest.created_at)
             .limit(limit)
@@ -405,7 +406,9 @@ class RequestOperations:
         return request
 
     @staticmethod
-    def manual_requeue(db: Session, request_id: int, note: Optional[str] = None) -> Optional[SongRequest]:
+    def manual_requeue(
+        db: Session, request_id: int, note: Optional[str] = None
+    ) -> Optional[SongRequest]:
         """Reset terminal queue failure and allow a fresh queue cycle."""
         request = db.query(SongRequest).filter(SongRequest.id == request_id).first()
         if not request:

@@ -29,6 +29,7 @@ class RadioDJTrack:
 # Try to import MySQL connector
 try:
     import mysql.connector
+
     MYSQL_AVAILABLE = True
 except ImportError:
     MYSQL_AVAILABLE = False
@@ -53,7 +54,7 @@ class RadioDJClient:
             "username": self.config.get("db_username", "root"),
             "password": self.config.get("db_password", ""),
         }
-        
+
         logger.info("RadioDJ client initialized")
 
     def _build_api_url(self, endpoint: str) -> str:
@@ -67,7 +68,9 @@ class RadioDJClient:
             params.setdefault("auth", self.api_key)
         return params
 
-    def _api_get_json(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[Any]:
+    def _api_get_json(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> Optional[Any]:
         """Issue a GET request against the RadioDJ plugin and parse JSON."""
         if not self.api_url:
             return None
@@ -87,7 +90,9 @@ class RadioDJClient:
             logger.warning("RadioDJ JSON endpoint %s returned invalid JSON: %s", endpoint, exc)
             return None
 
-    def _api_get_text(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    def _api_get_text(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> Optional[str]:
         """Issue a GET request against the RadioDJ plugin and return response text."""
         if not self.api_url:
             return None
@@ -110,8 +115,20 @@ class RadioDJClient:
         if not payload:
             return None
 
-        track_id = payload.get("id") or payload.get("ID") or payload.get("trackID") or payload.get("TrackID") or 0
-        title = payload.get("title") or payload.get("Title") or payload.get("name") or payload.get("Name") or ""
+        track_id = (
+            payload.get("id")
+            or payload.get("ID")
+            or payload.get("trackID")
+            or payload.get("TrackID")
+            or 0
+        )
+        title = (
+            payload.get("title")
+            or payload.get("Title")
+            or payload.get("name")
+            or payload.get("Name")
+            or ""
+        )
         artist = payload.get("artist") or payload.get("Artist") or payload.get("artists") or ""
         album = payload.get("album") or payload.get("Album") or ""
         file_path = payload.get("path") or payload.get("Path") or payload.get("file_path") or ""
@@ -303,7 +320,9 @@ class RadioDJClient:
                     timeout=10,
                 )
                 response.raise_for_status()
-                logger.info("Added track via REST plugin /opt: %s - %s (ID=%s)", artist, title, track_id)
+                logger.info(
+                    "Added track via REST plugin /opt: %s - %s (ID=%s)", artist, title, track_id
+                )
                 return True
             except requests.RequestException as exc:
                 logger.warning("REST plugin /opt queue failed: %s", exc)
@@ -471,7 +490,11 @@ class RadioDJClient:
         Returns:
             Dictionary with connection status
         """
-        status = {"api_available": False, "database_available": False, "filesystem_available": False}
+        status = {
+            "api_available": False,
+            "database_available": False,
+            "filesystem_available": False,
+        }
 
         # Check API — only /opt works on this plugin version
         if self.api_url:
@@ -532,14 +555,12 @@ class RadioDJClient:
                 password=self.db_config.get("password", ""),
             )
             cursor = conn.cursor(dictionary=True)
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT trackID, artist, title, album, duration
                 FROM history
                 ORDER BY date_played DESC, ID DESC
                 LIMIT 1
-                """
-            )
+                """)
             row = cursor.fetchone()
             cursor.close()
             conn.close()
@@ -609,14 +630,14 @@ class RadioDJClient:
         except Exception as exc:
             logger.error("Error loading RadioDJ queue: %s", exc)
             return []
-    
+
     def search_songs(self, query: str, limit: int = 10) -> list:
         """Search for songs in RadioDJ library.
-        
+
         Args:
             query: Search term (artist or title)
             limit: Max results
-            
+
         Returns:
             List of matching songs
         """
@@ -648,7 +669,7 @@ class RadioDJClient:
 
         if not MYSQL_AVAILABLE:
             return []
-            
+
         try:
             conn = mysql.connector.connect(
                 host=self.db_config.get("host", "localhost"),
@@ -658,7 +679,7 @@ class RadioDJClient:
                 password=self.db_config.get("password", ""),
             )
             cursor = conn.cursor(dictionary=True)
-            
+
             sql = """
                 SELECT ID, artist, title, duration, path
                 FROM songs

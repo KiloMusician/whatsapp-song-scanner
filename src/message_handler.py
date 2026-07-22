@@ -144,14 +144,17 @@ class MessageHandler:
 
             sender = message.get("from", {})
             sender_id = sender.get("id")
-            sender_name = sender.get("username") or "{} {}".format(
-                sender.get("first_name", ""), sender.get("last_name", "")
-            ).strip()
+            sender_name = (
+                sender.get("username")
+                or "{} {}".format(sender.get("first_name", ""), sender.get("last_name", "")).strip()
+            )
 
             raw_text = message.get("text") or message.get("caption") or ""
 
             ts = message.get("date")
-            timestamp = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else datetime.now(timezone.utc)
+            timestamp = (
+                datetime.fromtimestamp(ts, tz=timezone.utc) if ts else datetime.now(timezone.utc)
+            )
 
             return self.process_message(
                 db=db,

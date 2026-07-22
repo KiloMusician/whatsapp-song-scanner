@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 
 from src.database.operations import RequestOperations, SongOperations
 from src.music_matching.fuzzy_matcher import fuzzy_matcher
-from src.music_matching.musicbrainz_client import musicbrainz_client
 from src.music_matching.jamendo_client import jamendo_client
+from src.music_matching.musicbrainz_client import musicbrainz_client
 from src.music_matching.song_validator import song_validator
-from src.utils.logger import get_logger
 from src.telegram.client import telegram_client
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -108,7 +108,11 @@ class MatchingOrchestrator:
             SongOperations.verify_match(db, cast(int, matched_song.id), "auto_approve")
             logger.info("Match auto-approved: %s", best_match["title"])
 
-        logger.info("Successfully matched: %s (confidence=%.2f)", matched_song.song_title, matched_song.match_confidence)
+        logger.info(
+            "Successfully matched: %s (confidence=%.2f)",
+            matched_song.song_title,
+            matched_song.match_confidence,
+        )
 
         return {
             "matched_song_id": matched_song.id,

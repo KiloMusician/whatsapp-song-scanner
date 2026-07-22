@@ -11,7 +11,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from config.database import SessionLocal
-from src.database.operations import ChatOperations, MessageOperations, RequestOperations, SongOperations
+from src.database.operations import (
+    ChatOperations,
+    MessageOperations,
+    RequestOperations,
+    SongOperations,
+)
 from src.music_matching.matching_orchestrator import matching_orchestrator
 from src.radiodj_integration.playlist_manager import playlist_manager
 from src.text_processing.message_parser import message_parser
@@ -95,12 +100,17 @@ class TelegramPoller:
         # Clean and parse the message for song candidates
         cleaned = text_cleaner.clean(text)
         if not cleaned:
-            self.send_reply(chat_id, "🎵 I couldn't find a song in that message.\nTry: 'Artist - Song Title'")
+            self.send_reply(
+                chat_id, "🎵 I couldn't find a song in that message.\nTry: 'Artist - Song Title'"
+            )
             return True
 
         candidates = message_parser.parse(cleaned)
         if not candidates:
-            self.send_reply(chat_id, f"🔍 No song detected in: '{text[:40]}...'\n\nTry formats like:\n• Adele - Hello\n• Shape of You by Ed Sheeran")
+            self.send_reply(
+                chat_id,
+                f"🔍 No song detected in: '{text[:40]}...'\n\nTry formats like:\n• Adele - Hello\n• Shape of You by Ed Sheeran",
+            )
             return True
 
         # Process through full pipeline
@@ -109,8 +119,10 @@ class TelegramPoller:
             # Store chat and message
             ChatOperations.create_or_update_chat(db, str(chat_id), str(chat_id))
             ts = message.get("date")
-            timestamp = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else datetime.now(timezone.utc)
-            
+            timestamp = (
+                datetime.fromtimestamp(ts, tz=timezone.utc) if ts else datetime.now(timezone.utc)
+            )
+
             db_message = MessageOperations.create_message(
                 db=db,
                 message_id=message_id,
@@ -125,7 +137,7 @@ class TelegramPoller:
             for candidate in candidates:
                 title = candidate.get("title", "")
                 artist = candidate.get("artist", "")
-                
+
                 # Create extraction record
                 extraction = SongOperations.create_extraction(
                     db=db,
@@ -137,7 +149,7 @@ class TelegramPoller:
 
                 # Match the song
                 match_result = matching_orchestrator.match_song(db, extraction.id, title, artist)
-                
+
                 if not match_result:
                     results.append(f"❌ '{title}' by {artist or 'Unknown'} - No match found")
                     continue
@@ -159,21 +171,27 @@ class TelegramPoller:
                 # Auto-approve high confidence matches
                 if is_verified:
                     RequestOperations.approve_request(db, request.id)
-                    
+
                     # Immediately try to add to RadioDJ
                     track_id = playlist_manager.add_song_to_playlist(
-                        artist=matched_artist,
-                        title=matched_title,
-                        use_api=True
+                        artist=matched_artist, title=matched_title, use_api=True
                     )
-                    
+
                     if track_id is not None:
-                        RequestOperations.mark_queued(db, request.id, track_id if track_id > 0 else None)
-                        results.append(f"✅ '{matched_title}' by {matched_artist}\n   📻 Added to RadioDJ queue!")
+                        RequestOperations.mark_queued(
+                            db, request.id, track_id if track_id > 0 else None
+                        )
+                        results.append(
+                            f"✅ '{matched_title}' by {matched_artist}\n   📻 Added to RadioDJ queue!"
+                        )
                     else:
-                        results.append(f"✅ '{matched_title}' by {matched_artist}\n   ⚠️ Approved but RadioDJ unavailable")
+                        results.append(
+                            f"✅ '{matched_title}' by {matched_artist}\n   ⚠️ Approved but RadioDJ unavailable"
+                        )
                 else:
-                    results.append(f"🔍 '{matched_title}' by {matched_artist}\n   Confidence: {confidence:.0f}% (pending review)")
+                    results.append(
+                        f"🔍 '{matched_title}' by {matched_artist}\n   Confidence: {confidence:.0f}% (pending review)"
+                    )
 
             # Mark message as processed
             MessageOperations.mark_processed(db, db_message.id, cleaned)
