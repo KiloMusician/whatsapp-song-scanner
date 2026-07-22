@@ -2,7 +2,9 @@
 
 ## Overview
 
-The WhatsApp Song Scanner API provides endpoints for health checks, metrics, and webhook integration with WhatsApp providers.
+The Telegram Song Scanner API provides endpoints for health checks, metrics, and webhook integration with Telegram bots.
+
+**Note: WhatsApp integration is deprecated. The project now uses Telegram for all messaging functionality.**
 
 ## Base URL
 

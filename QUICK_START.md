@@ -1,13 +1,13 @@
 # ⚡ QUICK START GUIDE
 
-**5-Minute Setup for WhatsApp Song Scanner**
+**5-Minute Setup for Telegram Song Scanner**
 
 ---
 
 ## ✅ Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running
-- WhatsApp Business Account (Twilio) OR phone number (Evolution API)
+- Telegram Bot Token (from @BotFather)
 - 5 GB free disk space
 - Ports 5000, 3306, 6379 available
 
@@ -42,30 +42,27 @@ http://localhost:5000
 
 ---
 
-## 📡 Configure WhatsApp
+## 📡 Configure Telegram Bot
 
-### **Option A: Twilio (5 minutes)**
-1. Go to https://console.twilio.com
-2. Create WhatsApp Sandbox account
-3. Get **Account SID** and **Auth Token**
-4. Add to `.env`:
+### **Setup Telegram Bot (5 minutes)**
+1. Go to https://t.me/BotFather
+2. Send `/newbot` and follow instructions
+3. Get your **Bot Token** (something like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+4. Add your bot to a Telegram group as administrator
+5. Send `/mybots` to get your bot's info and get the **Chat ID**
+6. Add to `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   TELEGRAM_CHAT_ID=your_group_chat_id_here
    ```
-   WHATSAPP_PROVIDER=twilio
-   TWILIO_ACCOUNT_SID=your_sid
-   TWILIO_AUTH_TOKEN=your_token
-   TWILIO_WHATSAPP_NUMBER=+1234567890
-   ```
-5. Set webhook: `http://your-ip:5000/api/v1/webhook/twilio`
 
-### **Option B: Evolution API (3 minutes)**
-1. Visit http://localhost:8080
-2. Scan QR code with WhatsApp
-3. Get instance name from dashboard
-4. Already in `.env` - just update:
-   ```
-   WHATSAPP_PROVIDER=evolution
-   EVOLUTION_INSTANCE_NAME=your_instance_name
-   ```
+### **Test Your Bot**
+Send a message in your group like:
+```
+Play Bohemian Rhapsody by Queen
+```
+
+The bot should reply with the song match!
 
 ---
 
@@ -99,7 +96,7 @@ http://localhost:5000
 - **Status**: Green = System healthy
 
 ### **Workflow**
-1. Someone requests a song on WhatsApp
+1. Someone requests a song on Telegram
 2. System matches it to MusicBrainz
 3. **You see it in Dashboard → Pending**
 4. Click ✓ Approve
@@ -119,23 +116,68 @@ curl http://localhost:5000/api/v1/requests/pending
 # Test approval
 curl -X POST http://localhost:5000/api/v1/requests/approve \
   -H "Content-Type: application/json" \
-  -d '{"id": 1}'
+   -d '{"request_id": 1}'
+```
+
+### **Run Focused Regression Test**
+```powershell
+# From the repo root, with the virtual environment active
+pytest tests/unit/test_jamendo_to_radiodj.py -v
 ```
 
 ---
 
-## 🐛 Quick Troubleshooting
+## �️ Local Development (Without Docker)
+
+### **Start Telegram Bot**
+```powershell
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Start bot in background with logs
+Start-Process -FilePath ".\.venv\Scripts\python.exe" -ArgumentList "-m", "src.telegram_bot" -RedirectStandardOutput "bot_out.log" -RedirectStandardError "bot_err.log" -NoNewWindow
+
+# Or run in foreground (see output directly)
+.\.venv\Scripts\python.exe -m src.telegram_bot
+```
+
+### **Start Flask API Server**
+```powershell
+.\.venv\Scripts\python.exe -m src.main
+```
+
+### **Monitor Bot Logs**
+```powershell
+# Watch error log in real-time
+Get-Content bot_err.log -Tail 20 -Wait
+
+# View recent output
+Get-Content bot_out.log -Tail 30
+```
+
+### **Check if Bot is Running**
+```powershell
+Get-Process python -ErrorAction SilentlyContinue | Select-Object Id, ProcessName
+```
+
+### **Stop All Python Processes**
+```powershell
+Stop-Process -Name python -Force -ErrorAction SilentlyContinue
+```
+
+---
+
+## �🐛 Quick Troubleshooting
 
 ### **Dashboard won't load**
 ```bash
 docker-compose -f docker/docker-compose.yml restart song-scanner-bot
 ```
 
-### **Can't connect to WhatsApp**
+### **Can't connect to Telegram**
 ```bash
-# Check Evolution API running
-docker ps | grep evolution
-
+# Check bot token and chat ID in .env
+# Verify bot is added to group as admin
 # View logs
 docker logs whatsapp-song-scanner | tail -20
 ```
@@ -161,7 +203,7 @@ docker-compose down && docker-compose up -d
 ## 📞 Next Steps
 
 - ✅ Open dashboard: http://localhost:5000
-- ✅ Test song request via WhatsApp
+- ✅ Test song request via Telegram
 - ✅ Approve request in dashboard
 - ✅ Verify it appears in RadioDJ
 - 📖 See [DEPLOYMENT.md](DEPLOYMENT.md) for advanced config

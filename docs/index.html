@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Icecast Stream</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f0f;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #f0f0f0;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2.5rem 3rem;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ff3b3b22;
+      border: 1px solid #ff3b3b55;
+      color: #ff5555;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+
+    .live-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: #ff3b3b;
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+    }
+
+    .description {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    audio {
+      width: 100%;
+      border-radius: 8px;
+      accent-color: #ff5555;
+      margin-bottom: 1.5rem;
+    }
+
+    .meta {
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    .meta span {
+      margin: 0 6px;
+    }
+
+    .direct-link {
+      display: inline-block;
+      margin-top: 1.2rem;
+      font-size: 0.8rem;
+      color: #555;
+      text-decoration: none;
+      border-bottom: 1px dashed #333;
+      transition: color 0.2s;
+    }
+
+    .direct-link:hover { color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="live-badge"><span class="dot"></span> Live</div>
+    <h1>My Icecast Stream</h1>
+    <p class="description">A test Icecast stream &mdash; 128 kbps MP3</p>
+
+    <audio controls autoplay>
+      <!--
+        TODO: Replace YOUR_PUBLIC_IP with your router's public IP (or a domain).
+        To find your public IP: https://whatismyipaddress.com
+        You also need to forward port 8000 on your router to 192.168.1.178.
+      -->
+      <source src="https://mailman-aircraft-smoking-yourself.trycloudflare.com/stream" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+
+    <div class="meta">
+      <span>128 kbps</span>&bull;
+      <span>MP3</span>&bull;
+      <span>Stereo</span>&bull;
+      <span>48 kHz</span>
+    </div>
+
+    <a class="direct-link" href="https://mailman-aircraft-smoking-yourself.trycloudflare.com/stream">Direct stream link</a>
+  </div>
+</body>
+</html>

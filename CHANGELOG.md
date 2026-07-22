@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to the WhatsApp Song Scanner project will be documented in this file.
+All notable changes to the **Telegram Song Scanner** project will be documented in this file.
+
+**Note: WhatsApp integration has been deprecated in favor of Telegram.**
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-01-05
 
 ### Added
-- Initial release of WhatsApp Song Scanner Bot
-- WhatsApp integration with support for Twilio and Evolution API
+- Initial release of **Telegram Song Scanner Bot**
+- **Telegram integration** with support for bot-based messaging
+- **WhatsApp integration deprecated** - migrated to Telegram
 - Text processing pipeline for song request extraction
 - MusicBrainz integration with intelligent fuzzy matching
 - Complete MariaDB database schema with 5 core tables

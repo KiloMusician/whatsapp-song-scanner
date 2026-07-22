@@ -1,553 +1,326 @@
-# 🎵 WhatsApp*NEED TO UPDATE EVERYWHERE TO TELEGRAM* Song Scanner Bot → MariaDB → RadioDJ
+# 🎵 Telegram Song Scanner → MariaDB → RadioDJ
 
-A production-ready system that scans WhatsApp chats for song requests, matches them to music databases using MusicBrainz and fuzzy matching, stores verified results in MariaDB, and integrates with RadioDJ for automated playlist management.
+A production-ready system that listens to a Telegram group for song requests, matches them against MusicBrainz using fuzzy matching, stores verified results in MariaDB, and queues approved songs directly into RadioDJ.
 
 ## ✨ Features
 
-- **WhatsApp Integration**: Supports both Twilio WhatsApp API and Evolution API
-- **Intelligent Song Matching**: Uses MusicBrainz with fuzzy matching and confidence scoring
-- **Database Storage**: Complete MariaDB schema for tracking chats, messages, songs, and requests
-- **RadioDJ Integration**: Automated playlist addition via API or direct database access
-- **Modular Architecture**: Clean separation of concerns for easy maintenance
-- **Production Ready**: Docker deployment, monitoring, logging, and health checks
-- **Scalable Design**: Supports multiple chats and concurrent processing
+- **Telegram Bot**: Receives song requests from a Telegram group in natural language
+- **Intelligent Song Matching**: MusicBrainz search with fuzzy matching and confidence scoring
+- **Fallback APIs**: Spotify and Deezer as secondary match sources
+- **MariaDB Storage**: Tracks chats, messages, extracted songs, matches, and request history
+- **RadioDJ Integration**: Queues songs via REST API and direct database access
+- **Web Dashboard**: Approve or reject pending requests from a browser UI
+- **Background Automation**: APScheduler handles scanning and sync automatically
+- **Redis Cache**: Rate-limit-safe caching for MusicBrainz API calls
+- **Production Ready**: Docker deployment, health checks, structured logging
+
+## 🤖 How It Works
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│   Telegram      │───▶│  Message Parser  │───▶│  MusicBrainz     │
+│   Group Chat    │    │  (extract song)  │    │  Search          │
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+                                                        │
+┌─────────────────┐    ┌──────────────────┐    ┌───────▼──────────┐
+│   RadioDJ       │◀───│  Web Dashboard   │◀───│  Fuzzy Matcher   │
+│   Playlist      │    │  Approve/Reject  │    │  + Confidence    │
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+                                  │
+                           ┌──────▼──────┐
+                           │   MariaDB   │
+                           │   Storage   │
+                           └─────────────┘
+```
+
+1. Someone sends a message in the Telegram group:
+   ```
+   Play Bohemian Rhapsody by Queen
+   ```
+2. The bot extracts the song title and artist, searches MusicBrainz, and returns the best match.
+3. The matched song is stored in MariaDB as a pending request.
+4. You open the web dashboard and approve it.
+5. The song is queued directly into RadioDJ.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- WhatsApp Business Account (Twilio) OR phone number (Evolution API)
-- Python 3.11+ (for local development)
+- Docker and Docker Compose (app runs on Linux host `xanadu`)
+- Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
+- RadioDJ running on Windows (REST plugin on port 7000)
+- Python 3.11+ (for local development only)
 
-### Installation
+### 1. Configure Environment
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/KiloMusician/whatsapp-song-scanner.git
-cd whatsapp-song-scanner
-
-# 2. Configure environment
 cp .env.example .env
-# Edit .env with your configuration
 nano .env
-
-# 3. Start all services with Docker
-docker-compose -f docker/docker-compose.yml up -d
-
-# 4. Initialize database
-docker-compose -f docker/docker-compose.yml exec song-scanner-bot \
-  python -c "from src.database.models import init_database; init_database()"
-
-# 5. Verify installation
-curl http://localhost:5000/api/v1/health
 ```
 
-## 📋 System Architecture
+Key variables:
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│   WhatsApp      │───▶│  Chat Scanner    │───▶│  Text Processor  │
-│     Chats       │    │                  │    │                  │
-└─────────────────┘    └──────────────────┘    └──────────────────┘
-                                                            │
-┌─────────────────┐    ┌──────────────────┐          ┌─────▼─────┐
-│   RadioDJ       │◀───│  RadioDJ         │◀─────────│  Music    │
-│   Playlists     │    │  Integrator      │          │  Matcher  │
-└─────────────────┘    └──────────────────┘          └─────┬─────┘
-        ▲                                                   │
-        │                                            ┌─────▼─────┐
-        └────────────────────────────────────────────│  MariaDB  │
-                                                     │  Storage  │
-                                                     └───────────┘
-```
+```env
+# Telegram
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_group_chat_id_here
 
-## ⚙️ Configuration
-
-### Environment Variables
-
-Edit `.env` file with your configuration:
-
-```bash
-# WhatsApp Provider
-WHATSAPP_PROVIDER=evolution  # or 'twilio'
-
-# For Twilio
-TWILIO_ACCOUNT_SID=your_account_sid
-TWILIO_AUTH_TOKEN=your_auth_token
-TWILIO_WHATSAPP_NUMBER=+14155238886
-
-# For Evolution API
-EVOLUTION_API_URL=http://localhost:8080
-EVOLUTION_API_KEY=your_api_key
-
-# Database
+# App database (MariaDB in Docker)
 MARIADB_HOST=mariadb
-MARIADB_PORT=3306
 MARIADB_DATABASE=song_scanner
 MARIADB_USERNAME=scanner_bot
 MARIADB_PASSWORD=changeme
 
-# Music Matching
-MUSICBRAINZ_USER_AGENT=WhatsAppSongScanner/1.0.0
+# RadioDJ (Windows PC on local network)
+RADIODJ_API_URL=http://192.168.1.x:7000
+RADIODJ_API_KEY=password
+RADIODJ_DB_HOST=192.168.1.x
+RADIODJ_DB_NAME=radiodj2
+RADIODJ_DB_USER=root
+RADIODJ_DB_PASS=yourpassword
 
-# RadioDJ (optional)
-RADIODJ_API_URL=http://localhost:8080/radiodj
-RADIODJ_DB_PATH=/path/to/radiodj/database.sqlite
+# Redis
+REDIS_HOST=redis
 ```
 
-### WhatsApp Setup
-
-#### Using Evolution API (Recommended)
-
-1. Install and run Evolution API: `docker run -d evolution-api`
-2. Configure webhook in `.env` pointing to your server
-3. Link phone number via Evolution dashboard
-
-#### Using Twilio
-
-1. Create Twilio Business Account at twilio.com
-2. Get WhatsApp Business Account credentials
-3. Configure webhook URL for incoming messages
-4. Update `.env` with credentials
-
-## 🛠️ CLI Commands
-
-The CLI provides manual operations for testing and management:
+### 2. Start Services (on Linux host)
 
 ```bash
-# Show status and statistics
-python -m src.cli status
+git clone https://github.com/KiloMusician/whatsapp-song-scanner.git
+cd whatsapp-song-scanner
+docker compose -f docker/docker-compose.yml up -d
+```
 
-# Scan WhatsApp chats
-python -m src.cli scan                    # Scan all active chats
-python -m src.cli scan --chat-id=123      # Scan specific chat
+### 3. Verify
 
-# Sync to RadioDJ
-python -m src.cli sync                    # Sync up to 50 requests
-python -m src.cli sync --limit=10         # Sync custom limit
+```bash
+curl http://localhost:5000/api/v1/health
+```
 
-# Manage song requests
-python -m src.cli list-requests           # Show pending requests
-python -m src.cli approve 5               # Approve request #5
-python -m src.cli reject 5 --notes="N/A"  # Reject request #5
+Expected:
+```json
+{
+  "status": "healthy",
+  "components": {
+    "cache": { "connected": true, "status": "healthy" },
+    "radiodj": { "api_available": true, "database_available": true, "status": "healthy" }
+  }
+}
+```
 
-# List chats
-python -m src.cli list-chats             # Show all active chats
+### 4. Open Dashboard
+
+```
+http://xanadu:5000
 ```
 
 ## 📡 API Endpoints
 
-### Health & Status
+### Health & Monitoring
 
-- `GET /api/v1/health` - Health check
-- `GET /api/v1/metrics` - Application metrics
-- `GET /api/v1/status` - Current status
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/health` | System health check |
+| `GET` | `/api/v1/metrics` | Application metrics |
+| `GET` | `/api/v1/scan/status` | Scanner state and stats |
+| `GET` | `/api/v1/radiodj/status` | RadioDJ now-playing and queue |
 
-### Webhooks
+### Telegram Webhook
 
-- `POST /api/v1/webhook/twilio` - Twilio WhatsApp messages
-- `POST /api/v1/webhook/evolution` - Evolution API messages
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/webhook/telegram` | Receive updates from Telegram |
 
-### Song Requests (if exposed)
+### Song Requests
 
-- `GET /api/v1/requests` - List pending requests
-- `PUT /api/v1/requests/:id/approve` - Approve request
-- `PUT /api/v1/requests/:id/reject` - Reject request
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/requests/pending` | List pending requests |
+| `GET` | `/api/v1/requests/recent` | Recent requests (all statuses) |
+| `POST` | `/api/v1/requests/approve` | Approve and queue to RadioDJ |
+| `POST` | `/api/v1/requests/reject` | Reject a request |
+| `GET` | `/api/v1/requests/<id>/events` | Queue event timeline |
 
-## 🧪 Testing
+## ⚙️ Telegram Bot Setup
 
-```bash
-# Run all tests with coverage
-pytest -v --cov=src --cov-report=html
+1. Message [@BotFather](https://t.me/BotFather), send `/newbot`, follow the prompts.
+2. Copy the **Bot Token**.
+3. Add the bot to your Telegram group as an administrator.
+4. Get the **Chat ID** — send a message to the group, then call:
+   ```
+   https://api.telegram.org/bot<TOKEN>/getUpdates
+   ```
+   and read `message.chat.id`.
+5. Set the webhook:
+   ```bash
+   curl -F "url=https://your-host/api/v1/webhook/telegram" \
+        -F "secret_token=MY_SECRET" \
+        https://api.telegram.org/bot<TOKEN>/setWebhook
+   ```
+6. Add `TELEGRAM_WEBHOOK_SECRET=MY_SECRET` to `.env`.
 
-# Run specific test file
-pytest tests/unit/test_text_processing.py -v
+### Supported Request Patterns
 
-# Run with coverage report
-pytest --cov=src --cov-report=term-missing
+```
+Play Bohemian Rhapsody by Queen
+I want to hear Blinding Lights by The Weeknd
+Can you play Hoe Cakes by MF Doom
+request: Daft Punk - Get Lucky
+song? Blue (Da Ba Dee)
 ```
 
-**Current Coverage**: 50% (32/32 tests passing)
+## 🎙️ RadioDJ Integration
 
-## 🔍 Code Quality
+RadioDJ runs on a Windows PC on the local network. The bot connects in two ways:
 
-All code passes quality checks:
+| Method | How | When Used |
+|--------|-----|-----------|
+| REST API | `GET http://192.168.1.x:7000/opt?command=...&auth=password` | Queueing songs |
+| Direct DB | MySQL connection to `radiodj2` on Windows | Validation and fallback |
 
-```bash
-# Type checking
-mypy src/
+**Requirements on Windows:**
+- RadioDJ REST plugin enabled and running on port 7000
+- MariaDB `bind-address=0.0.0.0` in `my.ini` to allow remote connections
+- Root user with `%` host permission
 
-# Linting
-flake8 src/
+## 🗄️ Database Schema
 
-# Code formatting
-black src/
+Five core tables in MariaDB:
 
-# Import sorting
-isort src/
-```
-
-## 🐳 Docker Deployment
-
-### Start Services
-
-```bash
-docker-compose -f docker/docker-compose.yml up -d
-```
-
-### Services
-
-- **song-scanner-bot**: Flask application (port 5000)
-- **mariadb**: Database (port 3306)
-- **redis**: Cache layer (port 6379)
-- **evolution-api**: WhatsApp integration (port 8080)
-- **adminer**: Database management UI (port 8081)
-
-### View Logs
-
-```bash
-docker-compose -f docker/docker-compose.yml logs -f song-scanner-bot
-```
-
-### Stop Services
-
-```bash
-docker-compose -f docker/docker-compose.yml down
-```
+| Table | Purpose |
+|-------|---------|
+| `telegram_chats` | Monitored Telegram conversations |
+| `chat_messages` | Individual messages |
+| `extracted_songs` | Song phrases parsed from messages |
+| `matched_songs` | Verified matches from MusicBrainz |
+| `song_requests` | Pending/approved/rejected requests for RadioDJ |
 
 ## 📁 Project Structure
 
 ```
 whatsapp-song-scanner/
 ├── src/
-│   ├── main.py                 # Flask application entry point
-│   ├── cli.py                  # CLI commands
-│   ├── core/                   # Core functionality
-│   │   ├── scheduler.py        # Background job scheduling
-│   │   ├── health_check.py     # Health monitoring
-│   │   └── state_manager.py    # Application state
-│   ├── database/               # Database models and operations
-│   │   ├── models.py           # SQLAlchemy ORM models
-│   │   └── operations.py       # CRUD operations
-│   ├── whatsapp/               # WhatsApp integration
-│   │   ├── client.py           # WhatsApp client
-│   │   ├── message_handler.py  # Message processing
-│   │   └── chat_scanner.py     # Chat scanning logic
-│   ├── text_processing/        # Text analysis
-│   │   ├── text_cleaner.py     # Text normalization
-│   │   ├── message_parser.py   # Pattern extraction
+│   ├── main.py                    # Flask app + all API routes
+│   ├── dashboard.html             # Web UI (served at /)
+│   ├── message_handler.py         # Telegram update processor
+│   ├── telegram_bot.py            # Bot polling mode
+│   ├── core/
+│   │   ├── scheduler.py           # APScheduler jobs
+│   │   ├── health_check.py        # Health monitoring
+│   │   └── state_manager.py       # App state
+│   ├── database/
+│   │   ├── models.py              # SQLAlchemy models
+│   │   └── operations.py          # CRUD operations
+│   ├── text_processing/
+│   │   ├── message_parser.py      # Extract song/artist from text
+│   │   ├── text_cleaner.py        # Normalize input
 │   │   └── keyword_extractor.py
-│   ├── music_matching/         # Music database matching
-│   │   ├── musicbrainz_client.py
-│   │   ├── fuzzy_matcher.py    # Fuzzy matching logic
-│   │   ├── song_validator.py   # Match validation
+│   ├── music_matching/
+│   │   ├── musicbrainz_client.py  # MusicBrainz API
+│   │   ├── fuzzy_matcher.py       # Confidence scoring
+│   │   ├── song_validator.py      # Match validation
 │   │   └── matching_orchestrator.py
-│   ├── radiodj_integration/    # RadioDJ sync
-│   │   ├── radiodj_client.py
+│   ├── radiodj_integration/
+│   │   ├── radiodj_client.py      # REST API + MySQL client
 │   │   ├── playlist_manager.py
 │   │   └── sync_service.py
-│   └── utils/                  # Utilities
+│   └── utils/
 │       ├── logger.py
-│       ├── cache.py
+│       ├── cache.py               # Redis wrapper
 │       └── rate_limiter.py
-├── config/                     # Configuration
-│   ├── settings.py
+├── config/
+│   ├── settings.py                # All env var loading
 │   ├── database.py
 │   └── logging_config.py
-├── docker/                     # Docker configuration
+├── docker/
 │   ├── Dockerfile
 │   └── docker-compose.yml
-├── tests/                      # Test suite
-│   ├── unit/
-│   ├── integration/
-│   └── conftest.py
-├── .github/workflows/          # CI/CD pipelines
-│   └── ci.yml
-└── requirements.txt            # Production dependencies
+├── tests/
+├── requirements.txt
+└── .env.example
 ```
 
-## 📊 Database Schema
+## 🐳 Docker Services
 
-### Core Tables
-
-- **whatsapp_chats**: Tracks WhatsApp chats being scanned
-- **chat_messages**: Individual messages with text and metadata
-- **extracted_songs**: Song titles/artists extracted from messages
-- **matched_songs**: Verified matches from MusicBrainz with confidence scores
-- **song_requests**: Final song requests pending RadioDJ approval
-
-## 🔧 Troubleshooting
-
-### Issue: "ModuleNotFoundError: No module named 'src'"
-
-**Solution**: Install the package in development mode:
-```bash
-pip install -e .
-```
-
-### Issue: Database connection fails
-
-**Solution**: Check MariaDB is running:
-```bash
-docker-compose -f docker/docker-compose.yml logs mariadb
-```
-
-### Issue: WhatsApp webhooks not receiving messages
-
-**Solution**: 
-1. Verify webhook URL is publicly accessible
-2. Check firewall/NAT settings
-3. Verify API credentials in `.env`
-4. Check application logs: `docker-compose logs song-scanner-bot`
-
-## 📈 Performance & Monitoring
-
-- **APScheduler**: Background job scheduling (5-min scan, 2-min sync intervals)
-- **Logging**: Structured logging with rotating file handlers
-- **Caching**: Redis integration for rate limit and results caching
-- **Health Checks**: Endpoint monitoring and status reporting
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Make changes and ensure tests pass
-4. Commit with clear message (`git commit -m 'Add amazing feature'`)
-5. Push to branch (`git push origin feature/amazing-feature`)
-6. Open Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- [MusicBrainz](https://musicbrainz.org/) for music database API
-- [Twilio](https://www.twilio.com/) for WhatsApp integration
-- [Evolution API](https://github.com/EvolutionAPI/evolution-api) for alternative WhatsApp integration
-- [RadioDJ](http://www.radiodj.ro/) for radio automation software
-- [Flask](https://flask.palletsprojects.com/) for web framework
-- [SQLAlchemy](https://www.sqlalchemy.org/) for ORM
-
-#### Option 1: Evolution API (Recommended for Testing)
-
-1. Access Evolution API dashboard: `http://localhost:8080`
-2. Create a new instance
-3. Scan QR code with your WhatsApp
-4. Configure instance name in `.env`
-
-#### Option 2: Twilio API (Production)
-
-1. Create Twilio account and enable WhatsApp Sandbox
-2. Configure webhook: `http://your-server:5000/api/v1/webhook/twilio`
-3. Set credentials in `.env`
-
-## 🏗️ Project Structure
-
-```
-whatsapp-song-scanner/
-├── config/                 # Configuration files
-├── src/
-│   ├── whatsapp/          # WhatsApp integration
-│   ├── text_processing/   # Message parsing and cleaning
-│   ├── music_matching/    # MusicBrainz and fuzzy matching
-│   ├── database/          # MariaDB models and operations
-│   ├── radiodj_integration/ # RadioDJ integration
-│   ├── core/              # Scheduler, health checks, state
-│   └── utils/             # Logging, cache, rate limiter
-├── tests/                 # Unit and integration tests
-├── docker/                # Docker configuration
-├── scripts/               # Setup and maintenance scripts
-└── data/                  # Logs, cache, exports
-```
-
-## 🔧 API Endpoints
-
-### Health & Monitoring
-- `GET /api/v1/health` - System health check
-- `GET /api/v1/metrics` - Application metrics
-- `GET /api/v1/scan/status` - Scanning status
-
-### Webhooks
-- `POST /api/v1/webhook/twilio` - Twilio webhook
-- `POST /api/v1/webhook/evolution` - Evolution API webhook
-
-### Song Requests
-- `GET /api/v1/requests/pending` - Get pending requests
-- `POST /api/v1/requests/approve` - Approve request
-- `POST /api/v1/requests/reject` - Reject request
-
-## 🐳 Docker Deployment
+| Service | Port | Purpose |
+|---------|------|---------|
+| `whatsapp-song-scanner` | 5000 | Flask app + dashboard |
+| `scanner-mariadb` | 3306 | App database |
+| `scanner-redis` | 6379 | Cache layer |
 
 ```bash
-# Build and start
-make up
+# Start
+docker compose -f docker/docker-compose.yml up -d
 
-# View logs
-make logs
+# Rebuild after code changes
+docker compose -f docker/docker-compose.yml build song-scanner-bot
+docker compose -f docker/docker-compose.yml up -d --force-recreate song-scanner-bot
 
-# Stop services
-make down
+# Logs
+docker logs whatsapp-song-scanner --tail 50 -f
 
-# Run tests
-make test
+# Stop
+docker compose -f docker/docker-compose.yml down
+```
 
-# Database backup
-make backup
+## 🛠️ CLI Commands
+
+```bash
+# Status
+python -m src.cli status
+
+# Sync pending requests to RadioDJ
+python -m src.cli sync
+python -m src.cli sync --limit=10
+
+# Manage requests
+python -m src.cli list-requests
+python -m src.cli approve 5
+python -m src.cli reject 5 --notes="not available"
 ```
 
 ## 🧪 Testing
 
 ```bash
-# Run all tests
+# All tests
 pytest -v
 
-# Run specific test suite
-pytest tests/unit/test_text_processing.py -v
-pytest tests/integration/test_whatsapp_integration.py -v
-
-# Run with coverage
+# With coverage
 pytest --cov=src --cov-report=html
+
+# Specific suites
+pytest tests/unit/test_text_processing.py -v
+pytest tests/unit/test_fuzzy_matcher.py -v
 ```
 
-## 📊 Database Schema
+## 📈 Performance & Monitoring
 
-The system uses 5 main tables:
-
-1. **whatsapp_chats** - Tracks monitored WhatsApp conversations
-2. **chat_messages** - Stores individual messages
-3. **extracted_songs** - Song phrases extracted from messages
-4. **matched_songs** - Verified song information from MusicBrainz
-5. **song_requests** - Final requests ready for RadioDJ
-
-See `src/database/schema.sql` for detailed schema.
-
-## 🔄 Maintenance
-
-### Automated Tasks
-
-- **Chat Scanning**: Every 5 minutes (configurable)
-- **RadioDJ Sync**: Every 2 minutes
-- **Database Cleanup**: Daily at 2 AM
-- **Log Rotation**: When logs reach 100MB
-
-### Manual Maintenance
-
-```bash
-# Backup database
-./scripts/maintenance/backup_database.sh
-
-# Clean cache
-./scripts/maintenance/cleanup_cache.sh
-
-# Rotate logs
-./scripts/maintenance/rotate_logs.sh
-```
-
-## 🚨 Troubleshooting
-
-### WhatsApp Connection Issues
-
-```bash
-# For Evolution API
-docker-compose logs evolution-api
-
-# For Twilio
-# Check webhook logs in Twilio console
-docker-compose logs song-scanner-bot | grep webhook
-```
-
-### Database Connection Failed
-
-```bash
-# Check MariaDB status
-docker-compose ps mariadb
-
-# View MariaDB logs
-docker-compose logs mariadb
-
-# Test connection
-mysql -h localhost -P 3306 -u scanner_bot -p
-```
-
-### MusicBrainz Rate Limiting
-
-```bash
-# Reduce scan frequency in .env
-SCAN_INTERVAL=10  # Scan every 10 minutes
-```
-
-## 📈 Monitoring
-
-- **Application Health**: `http://localhost:5000/api/v1/health`
+- **APScheduler**: Background scan every 5 min, RadioDJ sync every 2 min
+- **Redis**: Caches MusicBrainz results to respect rate limits
 - **Prometheus** (optional): `http://localhost:9090`
-- **Grafana** (optional): `http://localhost:3000`
-- **Evolution API**: `http://localhost:8080`
+- **Health endpoint**: `http://xanadu:5000/api/v1/health`
 
-## 🔒 Security Considerations
+## 🔒 Security
 
-- Store sensitive credentials in `.env` (never commit)
-- Use environment-specific `.env` files
-- Enable RadioDJ database backups before direct access
-- Validate WhatsApp webhook signatures
-- Rate limit API endpoints
-- Regular security updates via `pip` and Docker images
-
-## 📝 Development
-
-### Local Development
-
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt -r requirements-dev.txt
-
-# Run locally
-python src/main.py
-```
-
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Type checking
-mypy src
-```
+- Store all credentials in `.env` — never commit secrets
+- Validate Telegram webhook requests using `X-Telegram-Bot-Api-Secret-Token`
+- RadioDJ REST plugin secured with an auth parameter
+- Rate limiting on all outbound API calls
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit changes: `git commit -m 'Add my feature'`
+4. Push and open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## 🙏 Credits
 
-- **MusicBrainz** - Open music encyclopedia
-- **Twilio** - WhatsApp Business API
-- **Evolution API** - Open-source WhatsApp integration
-- **RadioDJ** - Radio automation software
-
-## 📞 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check logs in `data/logs/`
-
----
-
-**Note**: This is a WhatsApp-specific bot, NOT a Discord bot. All chat scanning functionality is built around WhatsApp's APIs and protocols.
+- [MusicBrainz](https://musicbrainz.org/) — open music encyclopedia
+- [RadioDJ](http://www.radiodj.ro/) — radio automation software
+- [Flask](https://flask.palletsprojects.com/) — web framework
+- [SQLAlchemy](https://www.sqlalchemy.org/) — ORM
