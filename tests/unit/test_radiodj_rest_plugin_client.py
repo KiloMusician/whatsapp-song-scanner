@@ -25,17 +25,22 @@ def build_client() -> RadioDJClient:
 
 
 def test_validate_connection_uses_plugin_endpoints():
+    # /opt is the only endpoint confirmed working against the real plugin
+    # (see radiodj_client.py's "only /opt works on this plugin version"
+    # comment) - validate_connection() checks it first via _api_get_text,
+    # and any() short-circuits on the first successful check, so a mock
+    # that always succeeds only ever sees this one call.
     client = build_client()
 
     with patch("src.radiodj_integration.radiodj_client.requests.get") as mock_get:
-        mock_get.return_value = FakeResponse(payload={"NowPlaying": {"title": "Mirrors", "artist": "070 Shake"}})
+        mock_get.return_value = FakeResponse(text="OK", payload={"NowPlaying": {"title": "Mirrors", "artist": "070 Shake"}})
 
         status = client.validate_connection()
 
     assert status["api_available"] is True
     mock_get.assert_called_once_with(
-        "http://127.0.0.1:7000/npjson",
-        params={"auth": "password"},
+        "http://127.0.0.1:7000/opt",
+        params={"command": "Status", "auth": "password"},
         timeout=10,
     )
 
@@ -63,7 +68,12 @@ def test_get_now_playing_parses_plugin_payload():
     assert track.title == "Mirrors"
 
 
-def test_add_track_via_api_uses_setitem_loadtracktobottom():
+def test_add_track_via_api_uses_opt_loadtracktobottom():
+    # /opt is the only endpoint confirmed working against the real plugin
+    # (see radiodj_client.py's "only /opt works on this plugin version"
+    # comment) - add_track_via_api() calls it directly with requests.get,
+    # not through _api_get_text/_api_get_json, so params come from
+    # _build_api_params() with command/arg set explicitly.
     client = build_client()
 
     with patch.object(client, "find_track_in_library", return_value=39):
@@ -74,8 +84,8 @@ def test_add_track_via_api_uses_setitem_loadtracktobottom():
 
     assert success is True
     mock_get.assert_called_once_with(
-        "http://127.0.0.1:7000/SetItem",
-        params={"auth": "password", "command": "LoadTrackToBottom", "arg": 39},
+        "http://127.0.0.1:7000/opt",
+        params={"command": "LoadTrackToBottom", "arg": 39, "auth": "password"},
         timeout=10,
     )
 
