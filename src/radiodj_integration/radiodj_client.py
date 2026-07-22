@@ -229,7 +229,10 @@ class RadioDJClient:
                 "SELECT ID, artist, title, album, path, duration FROM songs WHERE ID = %s LIMIT 1",
                 (track_id,),
             )
-            row = cursor.fetchone()
+            # cursor(dictionary=True) guarantees a dict row at runtime, but the
+            # connector's stub can't narrow on the boolean kwarg - cast rather
+            # than let mypy fall back to the full tuple|dict union.
+            row = cast(Optional[Dict[str, Any]], cursor.fetchone())
             cursor.close()
             conn.close()
 
@@ -374,7 +377,8 @@ class RadioDJClient:
                     LIMIT 1
                 """
                 cursor.execute(exact_query, (f"%{artist}%", title))
-                result = cursor.fetchone()
+                # Plain (non-dict) cursor - fetchone() is a positional tuple.
+                result = cast(Optional[tuple], cursor.fetchone())
 
                 if not result:
                     fuzzy_query = """
@@ -384,7 +388,7 @@ class RadioDJClient:
                         LIMIT 1
                     """
                     cursor.execute(fuzzy_query, (f"%{artist}%", f"%{title}%"))
-                    result = cursor.fetchone()
+                    result = cast(Optional[tuple], cursor.fetchone())
 
                 cursor.close()
                 conn.close()
@@ -561,7 +565,7 @@ class RadioDJClient:
                 ORDER BY date_played DESC, ID DESC
                 LIMIT 1
                 """)
-            row = cursor.fetchone()
+            row = cast(Optional[Dict[str, Any]], cursor.fetchone())
             cursor.close()
             conn.close()
 
@@ -613,7 +617,7 @@ class RadioDJClient:
                 """,
                 (limit,),
             )
-            rows = cursor.fetchall()
+            rows = cast(List[Dict[str, Any]], cursor.fetchall())
             cursor.close()
             conn.close()
 
@@ -687,7 +691,7 @@ class RadioDJClient:
                 LIMIT %s
             """
             cursor.execute(sql, (f"%{query}%", f"%{query}%", limit))
-            results = cursor.fetchall()
+            results = cast(List[Dict[str, Any]], cursor.fetchall())
             cursor.close()
             conn.close()
             return results

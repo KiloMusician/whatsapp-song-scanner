@@ -60,9 +60,13 @@ class MessageHandler:
 
             try:
                 playlist_info = playlist_parser.detect_playlist_url(cleaned_text)
-                if playlist_info:
-                    platform = playlist_info.get("platform")
-                    playlist_id = playlist_info.get("playlist_id")
+                if (
+                    playlist_info
+                    and playlist_info.get("platform")
+                    and playlist_info.get("playlist_id")
+                ):
+                    platform = str(playlist_info["platform"])
+                    playlist_id = str(playlist_info["playlist_id"])
                     tracks = playlist_parser.get_playlist_tracks(platform, playlist_id)
                     max_tracks = 25
                     for track in tracks[:max_tracks]:

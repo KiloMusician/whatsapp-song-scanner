@@ -305,7 +305,7 @@ class RequestOperations:
             request=request,
             event_type="attempt_started",
             method=method,
-            attempt_number=request.queue_attempt_count or 0,
+            attempt_number=request.queue_attempt_count or 0,  # type: ignore[arg-type]
             idempotency_token=token,
         )
         db.commit()
@@ -337,7 +337,7 @@ class RequestOperations:
             request=request,
             event_type="attempt_succeeded",
             method=method,
-            attempt_number=request.queue_attempt_count or 0,
+            attempt_number=request.queue_attempt_count or 0,  # type: ignore[arg-type]
             idempotency_token=uuid4().hex,
         )
         db.commit()
@@ -358,7 +358,7 @@ class RequestOperations:
             return None
 
         retry_delays_seconds = retry_delays_seconds or [60, 120, 240]
-        attempt_number = request.queue_attempt_count or 0
+        attempt_number: int = request.queue_attempt_count or 0  # type: ignore[assignment]
         request.last_queue_method = method  # type: ignore[assignment]
         request.last_queue_error = error_message  # type: ignore[assignment]
         request.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]

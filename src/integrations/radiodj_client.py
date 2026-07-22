@@ -58,18 +58,22 @@ class RadioDJClient:
         queue placement depends on RadioDJ capabilities in the active client.
         """
         del position
-        return self._client.add_track_to_queue_db(track_id)
+        return bool(self._client.add_track_to_queue_db(track_id))
 
     def add_to_playlist(self, track_id: int, playlist_id: Optional[int] = None) -> bool:
         """Load a library track through the active client API path."""
         track = self._client.get_track_by_id(track_id)
         if not track:
             return False
-        return self._client.add_track_via_api(track.artist, track.title, playlist_id)
+        return bool(self._client.add_track_via_api(track.artist, track.title, playlist_id))
 
     def get_queue(self) -> List[RadioDJTrack]:
         """Get current queue."""
-        return [self._convert_track(track) for track in self._client.get_queue() if track]
+        return [
+            converted
+            for track in self._client.get_queue()
+            if track and (converted := self._convert_track(track)) is not None
+        ]
 
     def get_now_playing(self) -> Optional[RadioDJTrack]:
         """Get current now playing track."""

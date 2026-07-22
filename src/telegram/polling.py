@@ -3,7 +3,7 @@
 import os
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional, cast
 
 import requests
 from dotenv import load_dotenv
@@ -30,7 +30,7 @@ class TelegramPoller:
     """Poll Telegram for updates instead of using webhooks."""
 
     def __init__(self, token: Optional[str] = None):
-        self.token = token or os.getenv("TELEGRAM_BOT_TOKEN", "")
+        self.token: str = token or os.getenv("TELEGRAM_BOT_TOKEN") or ""
         self.base_url = f"https://api.telegram.org/bot{self.token}"
         self.offset = 0
         self.timeout = 30  # long polling timeout
@@ -45,13 +45,14 @@ class TelegramPoller:
             return []
 
         try:
+            params: dict[str, Any] = {
+                "offset": self.offset,
+                "timeout": self.timeout,
+                "allowed_updates": ["message", "edited_message"],
+            }
             resp = requests.get(
                 f"{self.base_url}/getUpdates",
-                params={
-                    "offset": self.offset,
-                    "timeout": self.timeout,
-                    "allowed_updates": ["message", "edited_message"],
-                },
+                params=params,
                 timeout=self.timeout + 5,
             )
             resp.raise_for_status()
@@ -61,7 +62,7 @@ class TelegramPoller:
                 logger.error("Telegram API error: %s", data)
                 return []
 
-            return data.get("result", [])
+            return cast(list, data.get("result", []))
         except requests.RequestException as exc:
             logger.error("Failed to get updates: %s", exc)
             return []
@@ -141,14 +142,16 @@ class TelegramPoller:
                 # Create extraction record
                 extraction = SongOperations.create_extraction(
                     db=db,
-                    message_id=db_message.id,
+                    message_id=db_message.id,  # type: ignore[arg-type]
                     original_phrase=candidate.get("original_phrase", f"{title} - {artist}"),
                     confidence_score=candidate.get("confidence", 80.0),
                     extraction_method=candidate.get("extraction_method", "parser"),
                 )
 
                 # Match the song
-                match_result = matching_orchestrator.match_song(db, extraction.id, title, artist)
+                match_result = matching_orchestrator.match_song(
+                    db, extraction.id, title, artist  # type: ignore[arg-type]
+                )
 
                 if not match_result:
                     results.append(f"❌ '{title}' by {artist or 'Unknown'} - No match found")
@@ -170,7 +173,7 @@ class TelegramPoller:
 
                 # Auto-approve high confidence matches
                 if is_verified:
-                    RequestOperations.approve_request(db, request.id)
+                    RequestOperations.approve_request(db, request.id)  # type: ignore[arg-type]
 
                     # Immediately try to add to RadioDJ
                     track_id = playlist_manager.add_song_to_playlist(
@@ -179,7 +182,7 @@ class TelegramPoller:
 
                     if track_id is not None:
                         RequestOperations.mark_queued(
-                            db, request.id, track_id if track_id > 0 else None
+                            db, request.id, track_id if track_id > 0 else None  # type: ignore[arg-type]
                         )
                         results.append(
                             f"✅ '{matched_title}' by {matched_artist}\n   📻 Added to RadioDJ queue!"
@@ -194,7 +197,7 @@ class TelegramPoller:
                     )
 
             # Mark message as processed
-            MessageOperations.mark_processed(db, db_message.id, cleaned)
+            MessageOperations.mark_processed(db, db_message.id, cleaned)  # type: ignore[arg-type]
 
             # Send reply
             reply = "🎵 Song Request Results:\n\n" + "\n\n".join(results)

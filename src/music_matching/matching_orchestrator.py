@@ -170,7 +170,7 @@ class MatchingOrchestrator:
         # Send Telegram notification if configured
         try:
             if telegram_client.is_configured():
-                title = match_result.get("title")
+                title = match_result.get("title") or title
                 artist = match_result.get("artist") or "Unknown"
                 confidence = match_result.get("confidence")
                 verified = match_result.get("is_verified")

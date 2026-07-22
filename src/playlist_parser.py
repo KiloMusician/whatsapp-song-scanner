@@ -18,8 +18,8 @@ class PlaylistParser:
     """Parse playlists from various streaming services."""
 
     def __init__(self):
-        self.spotify_token = None
-        self.spotify_token_expiry = 0
+        self.spotify_token: Optional[str] = None
+        self.spotify_token_expiry: float = 0
 
     def detect_playlist_url(self, text: str) -> Optional[Dict]:
         """Detect if text contains a playlist URL.
