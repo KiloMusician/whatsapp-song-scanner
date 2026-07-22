@@ -1,4 +1,4 @@
-# 🎵 WhatsApp Song Scanner Bot → MariaDB → RadioDJ
+# 🎵 WhatsApp*NEED TO UPDATE EVERYWHERE TO TELEGRAM* Song Scanner Bot → MariaDB → RadioDJ
 
 A production-ready system that scans WhatsApp chats for song requests, matches them to music databases using MusicBrainz and fuzzy matching, stores verified results in MariaDB, and integrates with RadioDJ for automated playlist management.
 
