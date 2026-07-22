@@ -48,6 +48,44 @@ RadioDJ loads `queuelist` into memory at startup and does not re-read it while r
    - Falls back to DB insert if API fails
 6. Telegram reply sent with match details and queue status
 
+## Album Art Upload (RadioDJ → Icecast PC)
+
+Use this when you want RadioDJ cover art to be pushed to a LAN upload server.
+
+- Upload server: `http://192.168.1.178:8080/upload`
+- API header: `X-Api-Key: pirate2024`
+- LAN-only setup (no internet exposure)
+
+### Test Upload (Windows)
+
+```bat
+curl -X POST "http://192.168.1.178:8080/upload" -H "X-Api-Key: pirate2024" -F "file=@cover.jpg"
+```
+
+### Option A: Event-Based Upload (Recommended)
+
+1. In RadioDJ, save cover art to file:
+   - `Settings -> General -> Cover Art -> Save cover to file`
+   - Path: `C:\RadioDJ\current_cover.jpg`
+2. Use `scripts/radiodj/upload_cover.bat` (or copy it beside RadioDJ and edit variables).
+3. In RadioDJ: `Settings -> Events -> After track change` and run the batch file.
+
+This uploads exactly once per track change.
+
+### Option B: Timed Watcher Upload
+
+1. Keep the same RadioDJ cover-art file path: `C:\RadioDJ\current_cover.jpg`
+2. Run `scripts/radiodj/watch_and_upload_cover.ps1` when RadioDJ starts.
+3. Script checks for cover file changes every 5 seconds and uploads only on change.
+
+Example:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/radiodj/watch_and_upload_cover.ps1
+```
+
+Use this mode if RadioDJ events are not available or not reliable.
+
 ## Key Config (`.env`)
 
 | Variable | Purpose |
